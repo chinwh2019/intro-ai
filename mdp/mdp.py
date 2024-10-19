@@ -174,8 +174,12 @@ def draw_treasure_trap_hunt(screen, grid_size, cell_size, start, treasure, trap,
                 pygame.draw.rect(screen, GRAY, rect)
             elif (i, j) == trap:
                 pygame.draw.rect(screen, RED, rect)
+                value_text = FONT.render(f"{V[(i, j)]:.2f}", True, WHITE)
+                screen.blit(value_text, (rect.centerx - value_text.get_width() // 2, rect.centery - value_text.get_height() // 2))
             elif (i, j) == treasure:
                 pygame.draw.rect(screen, GOLD, rect)
+                value_text = FONT.render(f"{V[(i, j)]:.2f}", True, BLACK)
+                screen.blit(value_text, (rect.centerx - value_text.get_width() // 2, rect.centery - value_text.get_height() // 2))
             else:
                 draw_cell(screen, rect, V[(i, j)], Q[(i, j)], show_q_values)
             
