@@ -188,6 +188,9 @@ def draw_treasure_trap_hunt(screen, grid_size, cell_size, start, treasure, trap,
             else:
                 draw_cell(screen, rect, V[(i, j)], Q[(i, j)], show_q_values)
             
+            # Draw border for all cells, including treasure and trap
+            pygame.draw.rect(screen, WHITE, rect, 1)
+            
             if (i, j) == start:
                 pygame.draw.circle(screen, BLUE, rect.center, cell_size // 4)
             
