@@ -1,6 +1,8 @@
 import pygame
 import sys
 import random
+import math
+
 
 # Initialize Pygame
 pygame.init()
@@ -9,11 +11,11 @@ pygame.init()
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
-GREEN = (0, 255, 0)
+DARK_GREEN = (0, 100, 0)  # Darker green color
 BLUE = (0, 0, 255)
-GRAY = (200, 200, 200)
-YELLOW = (255, 255, 0)
-LIGHT_BLUE = (173, 216, 230)
+GRAY = (128, 128, 128)
+LIGHT_GRAY = (200, 200, 200)
+GOLD = (255, 215, 0)  # Gold color for the treasure
 
 # Font
 FONT = pygame.font.Font(None, 24)
@@ -122,35 +124,72 @@ def draw_start_symbol(screen, rect):
         (rect.centerx + rect.width * 0.3, rect.bottom - rect.height * 0.2)
     ])
 
+
+def draw_triangle(surface, color, points):
+    pygame.draw.polygon(surface, color, points)
+    pygame.draw.lines(surface, WHITE, True, points, 1)
+
+
+def draw_cell(surface, rect, state_value, q_values, show_q_values):
+    pygame.draw.rect(surface, DARK_GREEN, rect)
+    pygame.draw.rect(surface, WHITE, rect, 1)
+
+    # Draw state value
+    value_text = FONT.render(f"{state_value:.2f}", True, WHITE)
+    surface.blit(value_text, (rect.centerx - value_text.get_width() // 2, rect.centery - value_text.get_height() // 2))
+
+    if show_q_values:
+        # Draw Q-values in triangles
+        triangle_points = [
+            [(rect.left, rect.top), (rect.right, rect.top), (rect.centerx, rect.centery)],  # Up
+            [(rect.right, rect.top), (rect.right, rect.bottom), (rect.centerx, rect.centery)],  # Right
+            [(rect.left, rect.bottom), (rect.right, rect.bottom), (rect.centerx, rect.centery)],  # Down
+            [(rect.left, rect.top), (rect.left, rect.bottom), (rect.centerx, rect.centery)]  # Left
+        ]
+        
+        for i, direction in enumerate(['up', 'right', 'down', 'left']):
+            draw_triangle(surface, DARK_GREEN, triangle_points[i])
+            q_value = q_values[direction]
+            q_text = FONT.render(f"{q_value:.2f}", True, WHITE)
+            
+            # Calculate text position
+            if direction == 'up':
+                text_pos = (rect.centerx - q_text.get_width() // 2, rect.top + 5)
+            elif direction == 'right':
+                text_pos = (rect.right - q_text.get_width() - 5, rect.centery - q_text.get_height() // 2)
+            elif direction == 'down':
+                text_pos = (rect.centerx - q_text.get_width() // 2, rect.bottom - q_text.get_height() - 5)
+            else:  # left
+                text_pos = (rect.left + 5, rect.centery - q_text.get_height() // 2)
+            
+            surface.blit(q_text, text_pos)
+
+
 def draw_treasure_trap_hunt(screen, grid_size, cell_size, start, treasure, trap, obstacles, V, Q, policy, show_policy, show_q_values):
     for i in range(grid_size):
         for j in range(grid_size):
             rect = pygame.Rect(j * cell_size, i * cell_size, cell_size, cell_size)
+            
             if (i, j) in obstacles:
                 pygame.draw.rect(screen, GRAY, rect)
+            elif (i, j) == trap:
+                pygame.draw.rect(screen, RED, rect)
+            elif (i, j) == treasure:
+                pygame.draw.rect(screen, GOLD, rect)
             else:
-                pygame.draw.rect(screen, WHITE, rect)
-            pygame.draw.rect(screen, BLACK, rect, 1)
+                draw_cell(screen, rect, V[(i, j)], Q[(i, j)], show_q_values)
             
             if (i, j) == start:
-                pygame.draw.circle(screen, BLUE, rect.center, cell_size // 3)
-            elif (i, j) == treasure:
-                draw_start_symbol(screen, rect)
-            elif (i, j) == trap:
-                draw_fire_pit(screen, rect)
-            
-            if show_q_values:
-                q_values = Q[(i, j)]
-                for idx, (action, value) in enumerate(q_values.items()):
-                    q_text = FONT.render(f"{action[0].upper()}: {value:.2f}", True, BLACK)
-                    screen.blit(q_text, (rect.x + 5, rect.y + 5 + idx * 20))
-            else:
-                value_text = FONT.render(f"{V[(i, j)]:.2f}", True, BLACK)
-                screen.blit(value_text, (rect.x + 5, rect.y + 5))
+                pygame.draw.circle(screen, BLUE, rect.center, cell_size // 4)
             
             if show_policy and policy and (i, j) in policy and (i, j) not in obstacles and (i, j) != treasure and (i, j) != trap:
-                arrow = FONT.render(policy[(i, j)][0].upper(), True, RED)
-                screen.blit(arrow, (rect.centerx - arrow.get_width() // 2, rect.centery - arrow.get_height() // 2))
+                arrow_points = {
+                    'up': [(rect.centerx, rect.top + 5), (rect.centerx - 5, rect.top + 15), (rect.centerx + 5, rect.top + 15)],
+                    'down': [(rect.centerx, rect.bottom - 5), (rect.centerx - 5, rect.bottom - 15), (rect.centerx + 5, rect.bottom - 15)],
+                    'left': [(rect.left + 5, rect.centery), (rect.left + 15, rect.centery - 5), (rect.left + 15, rect.centery + 5)],
+                    'right': [(rect.right - 5, rect.centery), (rect.right - 15, rect.centery - 5), (rect.right - 15, rect.centery + 5)]
+                }
+                pygame.draw.polygon(screen, WHITE, arrow_points[policy[(i, j)]])
 
 
 def generate_random_positions(grid_size, num_obstacles):
@@ -178,13 +217,13 @@ def main():
     print("Welcome to the Treasure and Trap MDP and Value Iteration Algorithm Explainer!")
     print("This application will guide you through the concepts using a treasure hunt game with a trap.")
     
-    grid_size = 8
-    cell_size = 80
+    grid_size = 5
+    cell_size = 120
     screen_size = grid_size * cell_size
-    screen = pygame.display.set_mode((screen_size, screen_size + 60))  # Increased extra space for two lines of text
+    screen = pygame.display.set_mode((screen_size, screen_size + 60))
     pygame.display.set_caption("Treasure and Trap MDP Value Iteration Visualization")
 
-    num_obstacles = 8
+    num_obstacles = 3
     start, treasure, trap, obstacles = generate_random_positions(grid_size, num_obstacles)
 
     mdp = create_treasure_trap_mdp(grid_size, start, treasure, trap, obstacles)
@@ -201,7 +240,7 @@ def main():
     # Create buttons
     policy_button_rect = pygame.Rect(10, screen_size + 15, 150, 30)
     q_value_button_rect = pygame.Rect(170, screen_size + 15, 150, 30)
-    button_color = LIGHT_BLUE
+    button_color = LIGHT_GRAY
     policy_button_text = FONT.render("Toggle Policy", True, BLACK)
     q_value_button_text = FONT.render("Toggle Q-Values", True, BLACK)
 
@@ -248,7 +287,6 @@ def main():
     print("- Policy: The best action to take in each state")
 
     print("\nThank you for using the Treasure and Trap MDP and Value Iteration Explainer!")
-
 
 if __name__ == "__main__":
     main()
