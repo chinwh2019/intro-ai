@@ -217,6 +217,13 @@ def update_values(state, action, next_state, reward, V, Q, discount, learning_ra
     V[state] = max(Q[state].values())
 
 
+def follow_policy(state, policy, mdp):
+    action = policy[state]
+    next_state = max(mdp.transition_probs[state][action], key=mdp.transition_probs[state][action].get)
+    return next_state
+
+
+
 def generate_random_positions(grid_size, num_obstacles):
     treasure_x = random.randint(grid_size // 2, grid_size - 1)
     treasure_y = random.randint(grid_size // 2, grid_size - 1)
@@ -242,7 +249,7 @@ def main():
     grid_size = 5
     cell_size = 120
     screen_size = grid_size * cell_size
-    screen = pygame.display.set_mode((screen_size, screen_size + 120))  # Increased height for text
+    screen = pygame.display.set_mode((screen_size, screen_size + 200))  # Increased height further
     pygame.display.set_caption("Treasure and Trap MDP Visualization")
 
     num_obstacles = 3
@@ -256,26 +263,35 @@ def main():
     show_policy = False
     show_q_values = False
     show_learning_process = False
-    current_iteration = 0
     manual_learning_mode = False
+    policy_demo_mode = False
     walker_pos = start
 
     learning_rate = 0.1
     discount = 0.9
 
     # Create buttons
-    policy_button_rect = pygame.Rect(10, screen_size + 15, 150, 30)
-    q_value_button_rect = pygame.Rect(170, screen_size + 15, 150, 30)
-    learning_button_rect = pygame.Rect(330, screen_size + 15, 150, 30)
-    manual_learning_button_rect = pygame.Rect(490, screen_size + 15, 150, 30)
+    button_height = 30
+    button_spacing = 10
+    button_y1 = screen_size + 15
+    button_y2 = button_y1 + button_height + button_spacing
+
+    policy_button_rect = pygame.Rect(10, button_y1, 150, button_height)
+    q_value_button_rect = pygame.Rect(170, button_y1, 150, button_height)
+    learning_button_rect = pygame.Rect(330, button_y1, 150, button_height)
+    manual_learning_button_rect = pygame.Rect(10, button_y2, 150, button_height)
+    policy_demo_button_rect = pygame.Rect(170, button_y2, 150, button_height)
+    
     button_color = LIGHT_GRAY
     policy_button_text = FONT.render("Toggle Policy", True, BLACK)
     q_value_button_text = FONT.render("Toggle Q-Values", True, BLACK)
     learning_button_text = FONT.render("Show Learning", True, BLACK)
     manual_learning_text = FONT.render("Manual Learning", True, BLACK)
+    policy_demo_text = FONT.render("Policy Demo", True, BLACK)
 
     episode_count = 0
     max_episodes = 1000
+    demo_step_delay = 500  # milliseconds
 
     clock = pygame.time.Clock()
 
@@ -293,6 +309,7 @@ def main():
                     current_iteration = 0
                 elif manual_learning_button_rect.collidepoint(event.pos):
                     manual_learning_mode = not manual_learning_mode
+                    policy_demo_mode = False
                     if manual_learning_mode:
                         V = {s: 0 for s in mdp.states}
                         Q = {s: {a: 0 for a in mdp.actions} for s in mdp.states}
@@ -303,6 +320,12 @@ def main():
                             Q[trap][a] = -1.0
                         walker_pos = start
                         episode_count = 0
+                elif policy_demo_button_rect.collidepoint(event.pos):
+                    policy_demo_mode = not policy_demo_mode
+                    manual_learning_mode = False
+                    if policy_demo_mode:
+                        walker_pos = random.choice([s for s in mdp.states if s not in obstacles and s != treasure and s != trap])
+            # ... [Keep the keyboard event handling] ...
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     show_policy = not show_policy
@@ -343,33 +366,53 @@ def main():
         
         if show_learning_process and current_iteration < len(iterations):
             V_current, Q_current = iterations[current_iteration]
-            draw_treasure_trap_hunt(screen, grid_size, cell_size, start, treasure, trap, obstacles, V_current, Q_current, policy, show_policy, show_q_values, walker_pos if manual_learning_mode else None)
+            draw_treasure_trap_hunt(screen, grid_size, cell_size, start, treasure, trap, obstacles, V_current, Q_current, policy, show_policy, show_q_values, walker_pos)
             current_iteration += 1
             if current_iteration == len(iterations):
                 show_learning_process = False
             pygame.time.wait(200)  # Add a small delay between iterations
         else:
-            draw_treasure_trap_hunt(screen, grid_size, cell_size, start, treasure, trap, obstacles, V, Q, policy, show_policy, show_q_values, walker_pos if manual_learning_mode else None)
-        
+            draw_treasure_trap_hunt(screen, grid_size, cell_size, start, treasure, trap, obstacles, V, Q, policy, show_policy, show_q_values, walker_pos)
+
+        if policy_demo_mode and walker_pos not in [treasure, trap]:
+            pygame.time.wait(demo_step_delay)
+            walker_pos = follow_policy(walker_pos, policy, mdp)
+            if walker_pos in [treasure, trap]:
+                pygame.time.wait(1000)  # Wait a second at the terminal state
+                walker_pos = random.choice([s for s in mdp.states if s not in obstacles and s != treasure and s != trap])
+
         # Draw buttons
         pygame.draw.rect(screen, button_color, policy_button_rect)
         pygame.draw.rect(screen, button_color, q_value_button_rect)
         pygame.draw.rect(screen, button_color, learning_button_rect)
         pygame.draw.rect(screen, button_color, manual_learning_button_rect)
+        pygame.draw.rect(screen, button_color, policy_demo_button_rect)
         screen.blit(policy_button_text, (policy_button_rect.x + 10, policy_button_rect.y + 5))
         screen.blit(q_value_button_text, (q_value_button_rect.x + 10, q_value_button_rect.y + 5))
         screen.blit(learning_button_text, (learning_button_rect.x + 10, learning_button_rect.y + 5))
         screen.blit(manual_learning_text, (manual_learning_button_rect.x + 10, manual_learning_button_rect.y + 5))
+        screen.blit(policy_demo_text, (policy_demo_button_rect.x + 10, policy_demo_button_rect.y + 5))
 
+        # Display text information
+        text_y = button_y2 + button_height + button_spacing
         if manual_learning_mode:
             episode_text = FONT.render(f"Episode: {episode_count}", True, BLACK)
-            screen.blit(episode_text, (10, screen_size + 50))
+            screen.blit(episode_text, (10, text_y))
+            text_y += 30
 
-        instructions = FONT.render("SPACE/P: policy, Q: Q-values, L: learning, R: randomize, Arrow keys: manual move", True, BLACK)
-        screen.blit(instructions, (10, screen_size + 80))
+        mode_text = FONT.render(f"Mode: {'Policy Demo' if policy_demo_mode else 'Manual Learning' if manual_learning_mode else 'Observation'}", True, BLACK)
+        screen.blit(mode_text, (10, text_y))
+        text_y += 30
+
+        instructions = FONT.render("SPACE/P: Policy, Q: Q-values, L: learning, R: Randomize maze", True, BLACK)
+        screen.blit(instructions, (10, text_y))
+        instructions = FONT.render("Arrow keys: Manual move", True, BLACK)
+        screen.blit(instructions, (10, text_y + 20))
+
+
 
         pygame.display.flip()
-        clock.tick(10)  # Limit to 10 frames per second
+        clock.tick(30)  # Increased frame rate for smoother animation
 
     pygame.quit()
 
