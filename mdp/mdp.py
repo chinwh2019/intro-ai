@@ -30,31 +30,28 @@ class MDP:
 
 def value_iteration(mdp, epsilon=0.001):
     V = {s: 0 for s in mdp.states}
+    Q = {s: {a: 0 for a in mdp.actions} for s in mdp.states}
     while True:
         delta = 0
         for s in mdp.states:
             if s == mdp.treasure:
                 V[s] = 1.0
+                Q[s] = {a: 1.0 for a in mdp.actions}
             elif s == mdp.trap:
                 V[s] = -1.0
+                Q[s] = {a: -1.0 for a in mdp.actions}
             else:
                 v = V[s]
-                V[s] = max(sum(mdp.transition_probs[s][a][s1] * (mdp.rewards[s][a] + mdp.discount * V[s1])
-                               for s1 in mdp.states)
-                           for a in mdp.actions)
+                for a in mdp.actions:
+                    Q[s][a] = sum(mdp.transition_probs[s][a][s1] * (mdp.rewards[s][a] + mdp.discount * V[s1])
+                                  for s1 in mdp.states)
+                V[s] = max(Q[s].values())
                 delta = max(delta, abs(v - V[s]))
         if delta < epsilon:
             break
     
-    policy = {}
-    for s in mdp.states:
-        if s == mdp.treasure or s == mdp.trap:
-            policy[s] = "stay"
-        else:
-            policy[s] = max(mdp.actions,
-                            key=lambda a: sum(mdp.transition_probs[s][a][s1] * (mdp.rewards[s][a] + mdp.discount * V[s1])
-                                              for s1 in mdp.states))
-    return V, policy
+    policy = {s: max(Q[s], key=Q[s].get) for s in mdp.states}
+    return V, Q, policy
 
 def create_treasure_trap_mdp(grid_size, start, treasure, trap, obstacles):
     states = [(i, j) for i in range(grid_size) for j in range(grid_size)]
@@ -125,7 +122,7 @@ def draw_start_symbol(screen, rect):
         (rect.centerx + rect.width * 0.3, rect.bottom - rect.height * 0.2)
     ])
 
-def draw_treasure_trap_hunt(screen, grid_size, cell_size, start, treasure, trap, obstacles, V, policy=None, show_policy=False):
+def draw_treasure_trap_hunt(screen, grid_size, cell_size, start, treasure, trap, obstacles, V, Q, policy, show_policy, show_q_values):
     for i in range(grid_size):
         for j in range(grid_size):
             rect = pygame.Rect(j * cell_size, i * cell_size, cell_size, cell_size)
@@ -142,8 +139,14 @@ def draw_treasure_trap_hunt(screen, grid_size, cell_size, start, treasure, trap,
             elif (i, j) == trap:
                 draw_fire_pit(screen, rect)
             
-            value_text = FONT.render(f"{V[(i, j)]:.2f}", True, BLACK)
-            screen.blit(value_text, (rect.x + 5, rect.y + 5))
+            if show_q_values:
+                q_values = Q[(i, j)]
+                for idx, (action, value) in enumerate(q_values.items()):
+                    q_text = FONT.render(f"{action[0].upper()}: {value:.2f}", True, BLACK)
+                    screen.blit(q_text, (rect.x + 5, rect.y + 5 + idx * 20))
+            else:
+                value_text = FONT.render(f"{V[(i, j)]:.2f}", True, BLACK)
+                screen.blit(value_text, (rect.x + 5, rect.y + 5))
             
             if show_policy and policy and (i, j) in policy and (i, j) not in obstacles and (i, j) != treasure and (i, j) != trap:
                 arrow = FONT.render(policy[(i, j)][0].upper(), True, RED)
@@ -189,43 +192,49 @@ def main():
     print("\nNow, let's apply the Value Iteration algorithm to find the optimal policy.")
     print("The algorithm will iterate until the values converge.")
 
-    V, policy = value_iteration(mdp)
+    V, Q, policy = value_iteration(mdp)
 
     running = True
     show_policy = False
+    show_q_values = False
 
-    # Create a button
-    button_rect = pygame.Rect(10, screen_size + 15, 150, 30)
+    # Create buttons
+    policy_button_rect = pygame.Rect(10, screen_size + 15, 150, 30)
+    q_value_button_rect = pygame.Rect(170, screen_size + 15, 150, 30)
     button_color = LIGHT_BLUE
-    button_text = FONT.render("Toggle Policy", True, BLACK)
+    policy_button_text = FONT.render("Toggle Policy", True, BLACK)
+    q_value_button_text = FONT.render("Toggle Q-Values", True, BLACK)
 
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if button_rect.collidepoint(event.pos):
+                if policy_button_rect.collidepoint(event.pos):
                     show_policy = not show_policy
+                elif q_value_button_rect.collidepoint(event.pos):
+                    show_q_values = not show_q_values
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     show_policy = not show_policy
+                elif event.key == pygame.K_q:
+                    show_q_values = not show_q_values
                 elif event.key == pygame.K_r:
                     start, treasure, trap, obstacles = generate_random_positions(grid_size, num_obstacles)
                     mdp = create_treasure_trap_mdp(grid_size, start, treasure, trap, obstacles)
-                    V, policy = value_iteration(mdp)
+                    V, Q, policy = value_iteration(mdp)
 
         screen.fill(WHITE)
-        draw_treasure_trap_hunt(screen, grid_size, cell_size, start, treasure, trap, obstacles, V, policy, show_policy)
+        draw_treasure_trap_hunt(screen, grid_size, cell_size, start, treasure, trap, obstacles, V, Q, policy, show_policy, show_q_values)
         
-        # Draw button
-        pygame.draw.rect(screen, button_color, button_rect)
-        screen.blit(button_text, (button_rect.x + 10, button_rect.y + 5))
+        # Draw buttons
+        pygame.draw.rect(screen, button_color, policy_button_rect)
+        pygame.draw.rect(screen, button_color, q_value_button_rect)
+        screen.blit(policy_button_text, (policy_button_rect.x + 10, policy_button_rect.y + 5))
+        screen.blit(q_value_button_text, (q_value_button_rect.x + 10, q_value_button_rect.y + 5))
 
-        # Split instructions into two lines
-        instructions1 = FONT.render("SPACE or click button to toggle policy", True, BLACK)
-        instructions2 = FONT.render("Press R to randomize", True, BLACK)
-        screen.blit(instructions1, (170, screen_size + 10))
-        screen.blit(instructions2, (170, screen_size + 35))
+        instructions = FONT.render("SPACE/P: policy, Q: Q-values, R: randomize", True, BLACK)
+        screen.blit(instructions, (330, screen_size + 20))
 
         pygame.display.flip()
 
@@ -239,6 +248,7 @@ def main():
     print("- Policy: The best action to take in each state")
 
     print("\nThank you for using the Treasure and Trap MDP and Value Iteration Explainer!")
+
 
 if __name__ == "__main__":
     main()
