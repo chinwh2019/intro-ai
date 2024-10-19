@@ -32,9 +32,11 @@ class MDP:
 
 def value_iteration(mdp, epsilon=0.001):
     V = {s: 0 for s in mdp.states}
-    Q = {s: {a: 0 for a in mdp.actions} for s in mdp.states}
+    iterations = []
+    
     while True:
         delta = 0
+        Q = {s: {a: 0 for a in mdp.actions} for s in mdp.states}
         for s in mdp.states:
             if s == mdp.treasure:
                 V[s] = 1.0
@@ -49,11 +51,13 @@ def value_iteration(mdp, epsilon=0.001):
                                   for s1 in mdp.states)
                 V[s] = max(Q[s].values())
                 delta = max(delta, abs(v - V[s]))
+        
+        iterations.append((V.copy(), Q.copy()))
         if delta < epsilon:
             break
     
     policy = {s: max(Q[s], key=Q[s].get) for s in mdp.states}
-    return V, Q, policy
+    return V, Q, policy, iterations
 
 def create_treasure_trap_mdp(grid_size, start, treasure, trap, obstacles):
     states = [(i, j) for i in range(grid_size) for j in range(grid_size)]
@@ -235,18 +239,22 @@ def main():
     print("\nNow, let's apply the Value Iteration algorithm to find the optimal policy.")
     print("The algorithm will iterate until the values converge.")
 
-    V, Q, policy = value_iteration(mdp)
+    V, Q, policy, iterations = value_iteration(mdp)
 
     running = True
     show_policy = False
     show_q_values = False
+    show_learning_process = False
+    current_iteration = 0
 
     # Create buttons
     policy_button_rect = pygame.Rect(10, screen_size + 15, 150, 30)
     q_value_button_rect = pygame.Rect(170, screen_size + 15, 150, 30)
+    learning_button_rect = pygame.Rect(330, screen_size + 15, 150, 30)
     button_color = LIGHT_GRAY
     policy_button_text = FONT.render("Toggle Policy", True, BLACK)
     q_value_button_text = FONT.render("Toggle Q-Values", True, BLACK)
+    learning_button_text = FONT.render("Show Learning", True, BLACK)
 
     while running:
         for event in pygame.event.get():
@@ -257,27 +265,44 @@ def main():
                     show_policy = not show_policy
                 elif q_value_button_rect.collidepoint(event.pos):
                     show_q_values = not show_q_values
+                elif learning_button_rect.collidepoint(event.pos):
+                    show_learning_process = not show_learning_process
+                    current_iteration = 0
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     show_policy = not show_policy
                 elif event.key == pygame.K_q:
                     show_q_values = not show_q_values
+                elif event.key == pygame.K_l:
+                    show_learning_process = not show_learning_process
+                    current_iteration = 0
                 elif event.key == pygame.K_r:
                     start, treasure, trap, obstacles = generate_random_positions(grid_size, num_obstacles)
                     mdp = create_treasure_trap_mdp(grid_size, start, treasure, trap, obstacles)
-                    V, Q, policy = value_iteration(mdp)
+                    V, Q, policy, iterations = value_iteration(mdp)
 
         screen.fill(WHITE)
-        draw_treasure_trap_hunt(screen, grid_size, cell_size, start, treasure, trap, obstacles, V, Q, policy, show_policy, show_q_values)
+        
+        if show_learning_process and current_iteration < len(iterations):
+            V_current, Q_current = iterations[current_iteration]
+            draw_treasure_trap_hunt(screen, grid_size, cell_size, start, treasure, trap, obstacles, V_current, Q_current, policy, show_policy, show_q_values)
+            current_iteration += 1
+            if current_iteration == len(iterations):
+                show_learning_process = False
+            pygame.time.wait(200)  # Add a small delay between iterations
+        else:
+            draw_treasure_trap_hunt(screen, grid_size, cell_size, start, treasure, trap, obstacles, V, Q, policy, show_policy, show_q_values)
         
         # Draw buttons
         pygame.draw.rect(screen, button_color, policy_button_rect)
         pygame.draw.rect(screen, button_color, q_value_button_rect)
+        pygame.draw.rect(screen, button_color, learning_button_rect)
         screen.blit(policy_button_text, (policy_button_rect.x + 10, policy_button_rect.y + 5))
         screen.blit(q_value_button_text, (q_value_button_rect.x + 10, q_value_button_rect.y + 5))
+        screen.blit(learning_button_text, (learning_button_rect.x + 10, learning_button_rect.y + 5))
 
-        instructions = FONT.render("SPACE/P: policy, Q: Q-values, R: randomize", True, BLACK)
-        screen.blit(instructions, (330, screen_size + 20))
+        instructions = FONT.render("SPACE/P: policy, Q: Q-values, L: learning, R: randomize", True, BLACK)
+        screen.blit(instructions, (10, screen_size + 50))
 
         pygame.display.flip()
 
