@@ -253,7 +253,7 @@ def main():
     screen = pygame.display.set_mode((screen_size, screen_size + 200))  # Increased height further
     pygame.display.set_caption("Treasure and Trap MDP Visualization")
 
-    num_obstacles = 3
+    num_obstacles = 2
     start, treasure, trap, obstacles = generate_random_positions(grid_size, num_obstacles)
 
     mdp = create_treasure_trap_mdp(grid_size, start, treasure, trap, obstacles)
@@ -295,6 +295,8 @@ def main():
     demo_step_delay = 500  # milliseconds
 
     clock = pygame.time.Clock()
+
+    terminal_state_message = ""
 
     while running:
         for event in pygame.event.get():
@@ -377,12 +379,29 @@ def main():
         else:
             draw_treasure_trap_hunt(screen, grid_size, cell_size, start, treasure, trap, obstacles, V, Q, policy, show_policy, show_q_values, walker_pos)
 
-        if policy_demo_mode and walker_pos not in [treasure, trap]:
-            pygame.time.wait(demo_step_delay)
-            walker_pos = follow_policy(walker_pos, policy, mdp)
-            if walker_pos in [treasure, trap]:
-                pygame.time.wait(1000)  # Wait a second at the terminal state
-                walker_pos = random.choice([s for s in mdp.states if s not in obstacles and s != treasure and s != trap])
+        if policy_demo_mode:
+            if walker_pos not in [treasure, trap]:
+                terminal_state_message = ""  # Clear the message at the start of movement
+                pygame.time.wait(demo_step_delay)
+                walker_pos = follow_policy(walker_pos, policy, mdp)
+                if walker_pos == treasure:
+                    terminal_state_message = "Reached the Treasure! Episode Ended."
+                    pygame.time.wait(1000)  # Wait a second at the terminal state
+                    walker_pos = random.choice(
+                        [s for s in mdp.states if s not in obstacles and s != treasure and s != trap]
+                    )
+                elif walker_pos == trap:
+                    terminal_state_message = "Fell into the Trap! Episode Ended."
+                    pygame.time.wait(1000)  # Wait a second at the terminal state
+                    walker_pos = random.choice(
+                        [s for s in mdp.states if s not in obstacles and s != treasure and s != trap]
+                    )
+            else:
+                # Agent is in terminal state; message remains displayed
+                pass
+        else:
+            terminal_state_message = ""  # Clear the message when not in policy demo mode
+
 
         # Draw buttons
         pygame.draw.rect(screen, button_color, policy_button_rect)
@@ -397,11 +416,12 @@ def main():
         screen.blit(policy_demo_text, (policy_demo_button_rect.x + 10, policy_demo_button_rect.y + 5))
 
         # Display text information
-        text_y = button_y2 + button_height + button_spacing
-        if manual_learning_mode:
-            episode_text = FONT.render(f"Episode: {episode_count}", True, BLACK)
-            screen.blit(episode_text, (10, text_y))
+        text_y = button_y2 + button_height + button_spacing + 60  # Adjust text_y based on your layout
+        if terminal_state_message:
+            message_text = FONT.render(terminal_state_message, True, RED)
+            screen.blit(message_text, (10, text_y))
             text_y += 30
+
 
         mode_text = FONT.render(f"Mode: {'Policy Demo' if policy_demo_mode else 'Manual Learning' if manual_learning_mode else 'Observation'}", True, BLACK)
         screen.blit(mode_text, (10, text_y))
@@ -411,8 +431,6 @@ def main():
         screen.blit(instructions, (10, text_y))
         instructions = FONT.render("Arrow keys: Manual move", True, BLACK)
         screen.blit(instructions, (10, text_y + 20))
-
-
 
         pygame.display.flip()
         clock.tick(30)  # Increased frame rate for smoother animation
@@ -427,7 +445,6 @@ def main():
     print("- Discount factor: 0.9 (future rewards are slightly less valuable)")
     print("- Policy: The best action to take in each state")
 
-    print("\nThank you for using the Treasure and Trap MDP and Value Iteration Explainer!")
 
 if __name__ == "__main__":
     main()
