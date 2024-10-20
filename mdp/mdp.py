@@ -219,9 +219,10 @@ def update_values(state, action, next_state, reward, V, Q, discount, learning_ra
 
 def follow_policy(state, policy, mdp):
     action = policy[state]
-    next_state = max(mdp.transition_probs[state][action], key=mdp.transition_probs[state][action].get)
+    next_states = list(mdp.transition_probs[state][action].keys())
+    probabilities = list(mdp.transition_probs[state][action].values())
+    next_state = random.choices(next_states, weights=probabilities, k=1)[0]
     return next_state
-
 
 
 def generate_random_positions(grid_size, num_obstacles):
@@ -350,8 +351,10 @@ def main():
                             action = "left"
                         else:
                             action = "right"
-                        
-                        next_state = max(mdp.transition_probs[walker_pos][action], key=mdp.transition_probs[walker_pos][action].get)
+
+                        next_states = list(mdp.transition_probs[walker_pos][action].keys())
+                        probabilities = list(mdp.transition_probs[walker_pos][action].values())
+                        next_state = random.choices(next_states, weights=probabilities, k=1)[0]
                         reward = mdp.rewards[walker_pos][action]
                         update_values(walker_pos, action, next_state, reward, V, Q, discount, learning_rate)
                         walker_pos = next_state
