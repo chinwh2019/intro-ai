@@ -1,14 +1,16 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class GameConfig:
     WIDTH: int = 800
     HEIGHT: int = 600
-    GRAVITY: float = 0.5
-    FLAP_STRENGTH: float = -8
-    PIPE_SPEED: float = 3
+    GRAVITY: float = 0.25     # Reduced gravity
+    FLAP_STRENGTH: float = -5  # Reduced flap strength
+    PIPE_SPEED: float = 2      # Slower pipes
     PIPE_SPACING: float = 300
     FPS: int = 60
+
 
 @dataclass
 class Colors:
