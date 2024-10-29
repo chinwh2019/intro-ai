@@ -36,6 +36,7 @@ class Config:
         self.BLUE = (0, 0, 255)
         self.GRAY = (128, 128, 128)
         self.YELLOW = (255, 255, 0)
+        self.ORANGE = (255, 165, 0)
 
         # Training settings
         self.LEARNING_RATE = 0.01
@@ -59,76 +60,125 @@ class Config:
 
 class LearningVisualizer:
     """Real-time visualization of the learning process"""
-
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, width=400):  # Accept width parameter
         self.config = config
-        self.width = 300
+        self.width = width
         self.height = 400
         self.surface = pygame.Surface((self.width, self.height))
         self.font = pygame.font.Font(None, 24)
-        self.action_names = ["Straight", "Right Turn", "Left Turn"]
-
+        self.action_names = ['Straight', 'Right Turn', 'Left Turn']
+        
     def update(self, agent, state: np.ndarray, action: int, reward: float):
         """Update the visualization with current learning data"""
-        self.surface.fill(self.config.BLACK)
-
-        # Get Q-values for current state
-        state_key = tuple(state)
-        q_values = agent.q_table.get(state_key, np.zeros(3))
-
-        # Draw Q-values
-        y_offset = 10
-        self._draw_text("Current Q-Values:", (10, y_offset))
-        y_offset += 30
-
-        # Draw bars for each action
-        max_q = max(abs(max(q_values)), abs(min(q_values)), 1)
-        bar_width = 60
-        bar_spacing = 30
-        bar_max_height = 100
-
-        for i, (action_name, q_val) in enumerate(zip(self.action_names, q_values)):
-            # Calculate bar height
-            height = (abs(q_val) / max_q) * bar_max_height
-            x = 20 + i * (bar_width + bar_spacing)
-            y = y_offset + bar_max_height - height
-
-            # Draw bar
-            color = self.config.GREEN if i == action else self.config.BLUE
-            pygame.draw.rect(self.surface, color, (x, y, bar_width, height))
-
-            # Draw value
-            value_text = f"{q_val:.2f}"
-            text_surface = self.font.render(value_text, True, self.config.WHITE)
-            self.surface.blit(text_surface, (x, y_offset + bar_max_height + 5))
-
-            # Draw action name
-            name_surface = self.font.render(action_name, True, self.config.WHITE)
-            rotated_surface = pygame.transform.rotate(name_surface, 45)
-            self.surface.blit(rotated_surface, (x - 10, y_offset + bar_max_height + 25))
-
-        # Draw current state information
-        y_offset += bar_max_height + 80
-        state_info = [
-            f"Action Taken: {self.action_names[action]}",
-            f"Reward: {reward:.2f}",
-            f"Epsilon: {agent.epsilon:.3f}",
-            f"Exploration: {agent.exploration_steps}",
-            f"Exploitation: {agent.exploitation_steps}",
-        ]
-
-        for info in state_info:
-            self._draw_text(info, (10, y_offset))
+        try:
+            self.surface.fill(self.config.BLACK)
+            
+            # Section 1: Title
+            y_offset = 10
+            title = "Q-Learning Visualization"
+            self._draw_centered_text(title, y_offset, self.config.YELLOW)
+            y_offset += 30
+            
+            # Section 2: Current Action and Reward
+            self._draw_text(f"Action: {self.action_names[action]}", (10, y_offset), 
+                          color=self.config.GREEN)
             y_offset += 25
-
-        return self.surface
-
+            self._draw_text(f"Reward: {reward:.2f}", (10, y_offset))
+            y_offset += 40
+            
+            # Section 3: Q-values
+            self._draw_text("Q-Values:", (10, y_offset))
+            y_offset += 25
+            
+            # Draw Q-value bars
+            bar_width = min(70, (self.width - 80) // 3)  # Adjust bar width based on surface width
+            bar_spacing = 20
+            bar_max_height = 80
+            
+            # Calculate total width of all bars
+            total_bars_width = (bar_width + bar_spacing) * 3 - bar_spacing
+            start_x = (self.width - total_bars_width) // 2  # Center the bars
+            
+            for i, (action_name, q_val) in enumerate(zip(self.action_names, agent.q_table.get(tuple(state), np.zeros(3)))):
+                normalized_height = min(abs(float(q_val)), bar_max_height)
+                height = max(1, int(normalized_height))
+                
+                x = start_x + i * (bar_width + bar_spacing)
+                y = y_offset + bar_max_height - height
+                
+                # Draw bar
+                rect = pygame.Rect(int(x), int(y), int(bar_width), int(height))
+                color = self.config.GREEN if i == action else self.config.BLUE
+                pygame.draw.rect(self.surface, color, rect)
+                pygame.draw.rect(self.surface, self.config.WHITE, rect, 1)
+                
+                # Draw value
+                value_text = f"{float(q_val):.2f}"
+                self._draw_centered_text(value_text, y - 20, self.config.WHITE, x, bar_width)
+                
+                # Draw action name
+                self._draw_centered_text(action_name, y_offset + bar_max_height + 10, 
+                                      self.config.WHITE, x, bar_width)
+            
+            # Section 4: Statistics
+            y_offset += bar_max_height + 60
+            
+            # Draw statistics in a grid layout
+            stats = [
+                ("Epsilon", f"{agent.epsilon:.3f}"),
+                ("Exploration", str(agent.exploration_steps)),
+                ("Exploitation", str(agent.exploitation_steps)),
+                ("Training Steps", str(agent.training_steps))
+            ]
+            
+            # Calculate columns and spacing
+            col_width = self.width // 2 - 20  # Leave margin
+            row_height = 25
+            
+            for i, (label, value) in enumerate(stats):
+                row = i // 2
+                col = i % 2
+                x = 20 + col * col_width
+                y = y_offset + row * row_height
+                
+                # Draw label and value with proper spacing
+                label_surface = self.font.render(f"{label}:", True, self.config.GRAY)
+                value_surface = self.font.render(str(value), True, self.config.WHITE)
+                
+                # Adjust value position based on label width
+                self.surface.blit(label_surface, (x, y))
+                self.surface.blit(value_surface, (x + label_surface.get_width() + 10, y))
+            
+            return self.surface
+            
+        except Exception as e:
+            print(f"Visualization error: {e}")
+            traceback.print_exc()
+            self.surface.fill(self.config.BLACK)
+            self._draw_text("Visualization Error", (10, 10), self.config.RED)
+            return self.surface
+    
+    def _draw_centered_text(self, text: str, y: int, color, x=None, width=None):
+        """Draw text centered horizontally"""
+        try:
+            text_surface = self.font.render(str(text), True, color)
+            if x is None:  # Center in entire surface
+                x = (self.width - text_surface.get_width()) // 2
+            elif width:  # Center in given width
+                x = x + (width - text_surface.get_width()) // 2
+            self.surface.blit(text_surface, (int(x), int(y)))
+        except Exception as e:
+            print(f"Text drawing error: {e}")
+    
     def _draw_text(self, text: str, pos: tuple, color=None):
-        """Helper method to draw text"""
-        if color is None:
-            color = self.config.WHITE
-        text_surface = self.font.render(text, True, color)
-        self.surface.blit(text_surface, pos)
+        """Draw text at specific position"""
+        try:
+            if color is None:
+                color = self.config.WHITE
+            text_surface = self.font.render(str(text), True, color)
+            self.surface.blit(text_surface, (int(pos[0]), int(pos[1])))
+        except Exception as e:
+            print(f"Text drawing error: {e}")
 
 
 class QValueVisualizer:
@@ -218,7 +268,7 @@ class SnakeGameAI:
 
         # Calculate total width to include visualization panels
         self.game_width = config.WINDOW_WIDTH
-        self.visualization_width = 300  # Width for visualization panels
+        self.visualization_width = 400  # Width for visualization panels
         self.total_width = self.game_width + self.visualization_width
 
         # Setup display
@@ -227,7 +277,7 @@ class SnakeGameAI:
         self.clock = pygame.time.Clock()
 
         # Initialize visualizers
-        self.learning_viz = LearningVisualizer(config)  
+        self.learning_viz = LearningVisualizer(config, width=self.visualization_width)  # Pass width to visualizer
 
         # Direction mapping
         self.dir_to_move = {
@@ -436,9 +486,7 @@ class SnakeGameAI:
         self.total_reward += reward
         return reward, game_over, self.score
 
-    def render(
-        self, agent=None, show_info: bool = True, action: int = None, reward: float = 0
-    ):
+    def render(self, agent=None, show_info: bool = True, action: int = None, reward: float = 0):
         """Render the game state with learning visualizations"""
         try:
             # Clear screen
@@ -506,29 +554,22 @@ class SnakeGameAI:
 
             # Draw visualizations
             if agent and show_info:
-                # Get current state
-                current_state = self._get_state()
-                
-                # Update and draw learning visualization
-                learning_surface = self.learning_viz.update(
-                    agent,
-                    current_state,
-                    action if action is not None else 0,
-                    reward
-                )
-                self.screen.blit(learning_surface, (self.game_width + 10, 10))
-                
-                # Draw basic game information
-                font = pygame.font.Font(None, 36)
-                info_texts = [
-                    f'Score: {self.score}',
-                    f'Length: {len(self.snake)}',
-                    f'Steps: {self.frame_iteration}'
-                ]
-                
-                for i, text in enumerate(info_texts):
-                    text_surface = font.render(text, True, self.config.WHITE)
-                    self.screen.blit(text_surface, (10, 10 + i * 30))
+                try:
+                    # Get current state
+                    current_state = self._get_state()
+                    
+                    # Update and draw learning visualization
+                    learning_surface = self.learning_viz.update(
+                        agent,
+                        current_state,
+                        action if action is not None else 0,
+                        float(reward)  # Ensure reward is float
+                    )
+                    if learning_surface:  # Check if surface was created successfully
+                        self.screen.blit(learning_surface, (self.game_width + 10, 10))
+                except Exception as viz_error:
+                    print(f"Visualization error: {viz_error}")
+                    traceback.print_exc()
             
             pygame.display.flip()
             
@@ -850,56 +891,70 @@ def play_trained_agent(config: Config, episodes: int = 5, delay: float = 0.1):
     """Demonstrate trained agent performance with detailed visualization"""
     env = SnakeGameAI(config)
     agent = QLearningAgent(config)
-
-    if not agent.load():
-        print("Could not load trained model. Please train the agent first.")
-        return
-
+    
+    # Try to load the best model first, if not available, load the regular model
+    if os.path.exists(config.Q_TABLE_FILE + '.best'):
+        if not agent.load(config.Q_TABLE_FILE + '.best'):
+            print("Could not load best model, trying regular model...")
+            if not agent.load():
+                print("Could not load any trained model. Please train the agent first.")
+                return
+    else:
+        if not agent.load():
+            print("Could not load any trained model. Please train the agent first.")
+            return
+    
+    print(f"\nLoaded Q-table with {len(agent.q_table)} states")
+    print(f"Best score achieved during training: {agent.best_score}")
+    
+    # Set epsilon to 0 for pure exploitation
     agent.epsilon = 0.0
-
+    
     try:
+        total_score = 0
         for episode in range(episodes):
             state = env.reset()
             episode_reward = 0
             steps = 0
-            current_action = None
-            current_reward = 0
-
+            
             print(f"\nEpisode {episode + 1}/{episodes}")
-
+            
             while True:
                 # Get action (no exploration during demonstration)
-                action = agent.get_action(state, training=False)
+                state_key = tuple(state)
+                if state_key in agent.q_table:
+                    action = np.argmax(agent.q_table[state_key])
+                else:
+                    action = 0  # Default action if state not in Q-table
+                
                 reward, done, score = env.step(action)
                 next_state = env._get_state()
-
-                current_action = action
-                current_reward = reward
-
+                
                 episode_reward += reward
                 steps += 1
                 state = next_state
-
+                
                 # Render with additional information
-                env.render(
-                    agent, show_info=True, action=current_action, reward=current_reward
-                )
+                env.render(agent, show_info=True, action=action, reward=reward)
                 env.clock.tick(config.SPEED)
-                time.sleep(delay)  # Add delay for better visualization
-
+                time.sleep(delay)
+                
                 if done:
                     break
-
+            
+            total_score += score
             print(f"Episode finished with score: {score}")
             print(f"Steps taken: {steps}")
             print(f"Total reward: {episode_reward:.2f}")
-            time.sleep(1)  # Pause between episodes
-
+            time.sleep(1)
+            
+        print(f"\nDemonstration Summary:")
+        print(f"Average Score: {total_score/episodes:.2f}")
+        
     except KeyboardInterrupt:
         print("\nDemonstration interrupted by user")
     finally:
         pygame.quit()
-
 
 class InteractiveControls:
     """Interactive controls for adjusting training parameters"""
