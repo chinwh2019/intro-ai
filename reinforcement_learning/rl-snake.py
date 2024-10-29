@@ -706,67 +706,66 @@ class QLearningAgent:
             self.learn(state, action, reward, next_state, done)
 
     def save(self, filename: str = None):
-        """Save agent state with training statistics"""
+        """Save agent state with additional information"""
         if filename is None:
             filename = self.config.Q_TABLE_FILE
-
+            
         try:
             # Convert the Q-table to a serializable format
             serializable_q_table = {}
             for state, actions in self.q_table.items():
-                # Convert state tuple to string and ensure all values are native Python types
-                state_str = ",".join([str(float(x)) for x in state])
-                # Convert numpy array to regular Python list with native float types
+                state_str = ','.join([str(float(x)) for x in state])
                 actions_list = [float(x) for x in actions]
                 serializable_q_table[state_str] = actions_list
 
             data = {
-                "q_table": serializable_q_table,
-                "epsilon": float(self.epsilon),
-                "training_steps": int(self.training_steps),
-                "exploration_steps": int(self.exploration_steps),
-                "exploitation_steps": int(self.exploitation_steps),
-                "best_score": int(self.best_score),
-                "episode_rewards": [float(x) for x in self.episode_rewards],
+                'q_table': serializable_q_table,
+                'epsilon': float(self.epsilon),
+                'training_steps': int(self.training_steps),
+                'exploration_steps': int(self.exploration_steps),
+                'exploitation_steps': int(self.exploitation_steps),
+                'best_score': int(self.best_score),
+                'episode_rewards': [float(x) for x in self.episode_rewards],
+                'version': '1.0',  # Add version tracking
+                'timestamp': str(datetime.now())
             }
-
-            with open(filename, "w") as f:
+            
+            with open(filename, 'w') as f:
                 json.dump(data, f)
             print(f"Successfully saved agent state to {filename}")
+            print(f"Q-table size: {len(self.q_table)} states")
             return True
         except Exception as e:
             print(f"Error saving agent state: {e}")
             return False
 
     def load(self, filename: str = None):
-        """Load agent state and training statistics"""
+        """Load agent state with verification"""
         if filename is None:
             filename = self.config.Q_TABLE_FILE
-
+            
         try:
             if os.path.exists(filename):
-                with open(filename, "r") as f:
+                with open(filename, 'r') as f:
                     data = json.load(f)
-
+                
                 # Convert loaded data to proper format
                 self.q_table = {}
-                for state_str, actions in data["q_table"].items():
-                    # Convert string back to tuple of floats
-                    state_values = [float(x) for x in state_str.split(",")]
+                for state_str, actions in data['q_table'].items():
+                    state_values = [float(x) for x in state_str.split(',')]
                     state_tuple = tuple(state_values)
-                    # Convert list back to numpy array
                     self.q_table[state_tuple] = np.array(actions, dtype=np.float32)
-
-                self.epsilon = float(data.get("epsilon", self.config.EPSILON))
-                self.training_steps = int(data.get("training_steps", 0))
-                self.exploration_steps = int(data.get("exploration_steps", 0))
-                self.exploitation_steps = int(data.get("exploitation_steps", 0))
-                self.best_score = int(data.get("best_score", 0))
-                self.episode_rewards = [
-                    float(x) for x in data.get("episode_rewards", [])
-                ]
-
+                
+                self.epsilon = float(data.get('epsilon', self.config.EPSILON))
+                self.training_steps = int(data.get('training_steps', 0))
+                self.exploration_steps = int(data.get('exploration_steps', 0))
+                self.exploitation_steps = int(data.get('exploitation_steps', 0))
+                self.best_score = int(data.get('best_score', 0))
+                self.episode_rewards = data.get('episode_rewards', [])
+                
                 print(f"Successfully loaded agent state from {filename}")
+                print(f"Q-table size: {len(self.q_table)} states")
+                print(f"Best score: {self.best_score}")
                 return True
             return False
         except Exception as e:
@@ -818,6 +817,7 @@ def train(config: Config, load_existing: bool = True, episodes: int = 1000):
             print("No existing model found or loading failed. Starting fresh training.")
 
     try:
+        best_score = agent.best_score
         for episode in range(episodes):
             state = env.reset()
             episode_reward = 0
@@ -861,7 +861,9 @@ def train(config: Config, load_existing: bool = True, episodes: int = 1000):
 
             # Update best score
             if score > agent.best_score:
-                agent.best_score = score
+                best_score = score
+                agent.best_score = best_score
+                print(f"\nNew best score: {best_score}! Saving best model...")
                 agent.save(config.Q_TABLE_FILE + ".best")
 
             # Save progress periodically
