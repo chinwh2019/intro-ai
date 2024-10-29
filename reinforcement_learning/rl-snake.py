@@ -28,6 +28,16 @@ class Config:
         self.WINDOW_HEIGHT = int(self.WINDOW_HEIGHT)
         self.BLOCK_SIZE = int(self.BLOCK_SIZE)
 
+        # Exploration-Exploitation settings
+        self.EPSILON_START = 1.0       # Start with 100% exploration
+        self.EPSILON_END = 0.01        # End with 1% exploration
+        self.EPSILON_DECAY = 0.995     # Decay rate for exploration
+        
+        # Episode settings for exploration phases
+        self.EXPLORATION_EPISODES = 200  # Heavy exploration phase
+        self.TRANSITION_EPISODES = 500   # Gradual transition phase
+        self.EXPLOITATION_EPISODES = 300  # Heavy exploitation phase
+
         # Colors
         self.BLACK = (0, 0, 0)
         self.WHITE = (255, 255, 255)
@@ -37,6 +47,10 @@ class Config:
         self.GRAY = (128, 128, 128)
         self.YELLOW = (255, 255, 0)
         self.ORANGE = (255, 165, 0)
+        self.GOLD = (255, 215, 0)
+        self.LIGHT_BLUE = (100, 149, 237)
+        self.LIGHT_GREEN = (144, 238, 144)
+        self.DARK_GRAY = (169, 169, 169)
 
         # Training settings
         self.LEARNING_RATE = 0.01
@@ -59,65 +73,110 @@ class Config:
 
 
 class LearningVisualizer:
-    """Real-time visualization of the learning process"""
-    def __init__(self, config: Config, width=400):  # Accept width parameter
+    """Real-time visualization of the learning process with educational elements"""
+    def __init__(self, config: Config, width=400):
         self.config = config
         self.width = width
-        self.height = 400
+        self.height = 480  # Increased height for additional information
         self.surface = pygame.Surface((self.width, self.height))
         self.font = pygame.font.Font(None, 24)
+        self.small_font = pygame.font.Font(None, 20)
         self.action_names = ['Straight', 'Right Turn', 'Left Turn']
-        self.total_reward = 0  # Add total reward tracking
-
+        self.total_reward = 0
+        
+        # Colors
+        self.GOLD = (255, 215, 0)
+        self.LIGHT_BLUE = (100, 149, 237)
+        self.LIGHT_GREEN = (144, 238, 144)
+        self.DARK_GRAY = (169, 169, 169)
         
     def update(self, agent, state: np.ndarray, action: int, reward: float):
-        """Update the visualization with current learning data"""
+        """Update the visualization with enhanced educational elements"""
         try:
             self.surface.fill(self.config.BLACK)
+            y_offset = 10
             
             # Update total reward
             self.total_reward += reward
             
-            # Section 1: Title
-            y_offset = 10
-            title = "Q-Learning Visualization"
-            self._draw_centered_text(title, y_offset, self.config.YELLOW)
-            y_offset += 30
+            # Section 1: Title and Episode Info
+            self._draw_centered_text("Q-Learning Visualization", y_offset, self.GOLD, size=28)
+            y_offset += 35
             
             # Section 2: Current Action and Rewards
-            self._draw_text(f"Action: {self.action_names[action]}", (10, y_offset), 
-                          color=self.config.GREEN)
+            # Draw box around action information
+            action_box = pygame.Rect(10, y_offset, self.width - 20, 70)
+            pygame.draw.rect(self.surface, self.DARK_GRAY, action_box, 1)
+            
+            self._draw_text(f"Current Action: {self.action_names[action]}", 
+                          (20, y_offset + 10), self.LIGHT_GREEN)
+            
+            # Show rewards
+            reward_color = self.config.GREEN if reward >= 0 else self.config.RED
+            self._draw_text(f"Step Reward: {reward:.1f}", 
+                          (20, y_offset + 35), reward_color)
+            
+            total_reward_color = self.config.GREEN if self.total_reward >= 0 else self.config.RED
+            self._draw_text(f"Total Reward: {self.total_reward:.1f}", 
+                          (200, y_offset + 35), total_reward_color)
+            
+            y_offset += 90
+            
+            # Section 3: Exploration vs Exploitation Status
+            self._draw_centered_text("Learning Strategy", y_offset, self.LIGHT_BLUE)
             y_offset += 25
             
-            # Show both current and total rewards
-            self._draw_text("Current Reward:", (10, y_offset), self.config.GRAY)
-            self._draw_text(f"{reward:.1f}", (140, y_offset), 
-                          self.config.RED if reward < 0 else self.config.GREEN)
-            y_offset += 25
+            # Draw exploration-exploitation balance bar
+            total_steps = agent.exploration_steps + agent.exploitation_steps
+            if total_steps > 0:
+                # Background bar
+                bar_width = self.width - 40
+                bar_height = 30
+                background_rect = pygame.Rect(20, y_offset, bar_width, bar_height)
+                pygame.draw.rect(self.surface, self.DARK_GRAY, background_rect)
+                
+                # Exploration portion (blue)
+                explore_ratio = agent.exploration_steps / total_steps
+                explore_width = int(bar_width * explore_ratio)
+                explore_rect = pygame.Rect(20, y_offset, explore_width, bar_height)
+                pygame.draw.rect(self.surface, self.LIGHT_BLUE, explore_rect)
+                
+                # Exploitation portion (green)
+                exploit_rect = pygame.Rect(20 + explore_width, y_offset, 
+                                         bar_width - explore_width, bar_height)
+                pygame.draw.rect(self.surface, self.LIGHT_GREEN, exploit_rect)
+                
+                # Draw percentages
+                explore_text = f"Exploration: {explore_ratio*100:.1f}%"
+                exploit_text = f"Exploitation: {(1-explore_ratio)*100:.1f}%"
+                self._draw_text(explore_text, (25, y_offset + bar_height + 5), 
+                              self.LIGHT_BLUE, self.small_font)
+                self._draw_text(exploit_text, (self.width//2 + 25, y_offset + bar_height + 5), 
+                              self.LIGHT_GREEN, self.small_font)
+                
+                # Draw epsilon value
+                epsilon_text = f"ε = {agent.epsilon:.3f}"
+                self._draw_centered_text(epsilon_text, y_offset - 20, self.config.WHITE)
             
-            self._draw_text("Total Reward:", (10, y_offset), self.config.GRAY)
-            self._draw_text(f"{self.total_reward:.1f}", (140, y_offset),
-                          self.config.RED if self.total_reward < 0 else self.config.GREEN)
-            y_offset += 40
+            y_offset += 70
             
-            # Section 3: Q-values
-            self._draw_text("Q-Values:", (10, y_offset))
+            # Section 4: Q-Values Visualization
+            self._draw_centered_text("Action Values (Q-values)", y_offset, self.LIGHT_BLUE)
             y_offset += 25
             
             # Draw Q-value bars
-            bar_width = min(70, (self.width - 80) // 3)
-            bar_spacing = 20
+            q_values = agent.q_table.get(tuple(state), np.zeros(3))
+            max_q = max(abs(max(q_values)), abs(min(q_values)), 1.0)
+            bar_width = 60
+            bar_spacing = 30
             bar_max_height = 80
             
-            # Calculate total width of all bars
+            # Center the bars
             total_bars_width = (bar_width + bar_spacing) * 3 - bar_spacing
             start_x = (self.width - total_bars_width) // 2
             
-            # Get Q-values for current state
-            q_values = agent.q_table.get(tuple(state), np.zeros(3))
-            max_q = max(abs(max(q_values)), abs(min(q_values)), 1.0)
-            
             for i, (action_name, q_val) in enumerate(zip(self.action_names, q_values)):
+                # Calculate bar height
                 normalized_height = (abs(float(q_val)) / max_q) * bar_max_height
                 height = max(1, int(normalized_height))
                 
@@ -125,46 +184,39 @@ class LearningVisualizer:
                 y = y_offset + bar_max_height - height
                 
                 # Draw bar
-                rect = pygame.Rect(int(x), int(y), int(bar_width), int(height))
-                color = self.config.GREEN if i == action else self.config.BLUE
+                color = self.LIGHT_GREEN if i == action else self.LIGHT_BLUE
+                rect = pygame.Rect(int(x), int(y), bar_width, height)
                 pygame.draw.rect(self.surface, color, rect)
                 pygame.draw.rect(self.surface, self.config.WHITE, rect, 1)
                 
-                # Draw value
+                # Draw Q-value
                 value_text = f"{float(q_val):.2f}"
-                self._draw_centered_text(value_text, y - 20, self.config.WHITE, x, bar_width)
+                self._draw_centered_text(value_text, y - 20, self.config.WHITE, 
+                                      x, bar_width)
                 
                 # Draw action name
-                self._draw_centered_text(action_name, y_offset + bar_max_height + 10, 
+                self._draw_centered_text(action_name, y_offset + bar_max_height + 5, 
                                       self.config.WHITE, x, bar_width)
             
-            # Section 4: Agent Statistics
-            y_offset += bar_max_height + 60
+            y_offset += bar_max_height + 40
             
-            # Draw statistics in a grid layout
+            # Section 5: Statistics
+            stats_box = pygame.Rect(10, y_offset, self.width - 20, 80)
+            pygame.draw.rect(self.surface, self.DARK_GRAY, stats_box, 1)
+            
             stats = [
-                ("Epsilon", f"{agent.epsilon:.3f}"),
-                ("Score", str(agent.best_score)),
-                ("Exploration", str(agent.exploration_steps)),
-                ("Exploitation", str(agent.exploitation_steps))
+                ("Total Steps", f"{total_steps}"),
+                ("Explore Steps", f"{agent.exploration_steps}"),
+                ("Exploit Steps", f"{agent.exploitation_steps}"),
+                ("Best Score", f"{agent.best_score}")
             ]
             
-            # Calculate columns and spacing
-            col_width = self.width // 2 - 20
-            row_height = 25
-            
+            # Draw stats in two columns
+            col_width = (self.width - 40) // 2
             for i, (label, value) in enumerate(stats):
-                row = i // 2
-                col = i % 2
-                x = 20 + col * col_width
-                y = y_offset + row * row_height
-                
-                # Draw label and value with proper spacing
-                label_surface = self.font.render(f"{label}:", True, self.config.GRAY)
-                value_surface = self.font.render(str(value), True, self.config.WHITE)
-                
-                self.surface.blit(label_surface, (x, y))
-                self.surface.blit(value_surface, (x + label_surface.get_width() + 10, y))
+                x = 20 + (i // 2) * col_width
+                y = y_offset + 10 + (i % 2) * 30
+                self._draw_text(f"{label}: {value}", (x, y), self.config.WHITE, self.small_font)
             
             return self.surface
             
@@ -174,15 +226,27 @@ class LearningVisualizer:
             self.surface.fill(self.config.BLACK)
             self._draw_text("Visualization Error", (10, 10), self.config.RED)
             return self.surface
-        
-    def reset(self):
-        """Reset total reward counter"""
-        self.total_reward = 0
     
-    def _draw_centered_text(self, text: str, y: int, color, x=None, width=None):
-        """Draw text centered horizontally"""
+    def _draw_text(self, text: str, pos: tuple, color=None, font=None):
+        """Draw text with specified font"""
         try:
-            text_surface = self.font.render(str(text), True, color)
+            if color is None:
+                color = self.config.WHITE
+            if font is None:
+                font = self.font
+            text_surface = font.render(str(text), True, color)
+            self.surface.blit(text_surface, (int(pos[0]), int(pos[1])))
+        except Exception as e:
+            print(f"Text drawing error: {e}")
+            
+    def _draw_centered_text(self, text: str, y: int, color, x=None, width=None, size=None):
+        """Draw centered text"""
+        try:
+            if size:
+                font = pygame.font.Font(None, size)
+            else:
+                font = self.font
+            text_surface = font.render(str(text), True, color)
             if x is None:  # Center in entire surface
                 x = (self.width - text_surface.get_width()) // 2
             elif width:  # Center in given width
@@ -191,15 +255,9 @@ class LearningVisualizer:
         except Exception as e:
             print(f"Text drawing error: {e}")
     
-    def _draw_text(self, text: str, pos: tuple, color=None):
-        """Draw text at specific position"""
-        try:
-            if color is None:
-                color = self.config.WHITE
-            text_surface = self.font.render(str(text), True, color)
-            self.surface.blit(text_surface, (int(pos[0]), int(pos[1])))
-        except Exception as e:
-            print(f"Text drawing error: {e}")
+    def reset(self):
+        """Reset total reward counter"""
+        self.total_reward = 0
 
 
 class QValueVisualizer:
@@ -657,6 +715,39 @@ class QLearningAgent:
 
         # Visualization data
         self.last_q_update = None
+
+        # Exploration-Exploitation parameters
+        self.epsilon = config.EPSILON  # Probability of exploration
+        self.epsilon_decay = config.EPSILON_DECAY  # How fast to reduce exploration
+        self.epsilon_min = config.EPSILON_MIN  # Minimum exploration probability
+        
+        # Counters for tracking decision types
+        self.exploration_steps = 0  # Times agent chose random action (exploration)
+        self.exploitation_steps = 0  # Times agent chose best known action (exploitation)
+
+        def get_exploration_ratio(self) -> float:
+            """Calculate the current exploration ratio"""
+            total_steps = self.exploration_steps + self.exploitation_steps
+            if total_steps == 0:
+                return 0.0
+            return self.exploration_steps / total_steps
+
+    def get_action(self, state: np.ndarray, training: bool = True) -> int:
+        """Get action using epsilon-greedy policy"""
+        state_key = tuple(state)
+        
+        # Initialize Q-values for new state if needed
+        if state_key not in self.q_table:
+            self.q_table[state_key] = np.zeros(self.action_size)
+        
+        # Exploration: Choose random action with probability epsilon
+        if training and random.random() < self.epsilon:
+            self.exploration_steps += 1
+            return random.randint(0, self.action_size-1)
+        
+        # Exploitation: Choose best known action
+        self.exploitation_steps += 1
+        return np.argmax(self.q_table[state_key])
 
     def get_action(self, state: np.ndarray, training: bool = True) -> int:
         """Get action using epsilon-greedy policy with visualization support"""
