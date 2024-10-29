@@ -67,11 +67,16 @@ class LearningVisualizer:
         self.surface = pygame.Surface((self.width, self.height))
         self.font = pygame.font.Font(None, 24)
         self.action_names = ['Straight', 'Right Turn', 'Left Turn']
+        self.total_reward = 0  # Add total reward tracking
+
         
     def update(self, agent, state: np.ndarray, action: int, reward: float):
         """Update the visualization with current learning data"""
         try:
             self.surface.fill(self.config.BLACK)
+            
+            # Update total reward
+            self.total_reward += reward
             
             # Section 1: Title
             y_offset = 10
@@ -79,11 +84,20 @@ class LearningVisualizer:
             self._draw_centered_text(title, y_offset, self.config.YELLOW)
             y_offset += 30
             
-            # Section 2: Current Action and Reward
+            # Section 2: Current Action and Rewards
             self._draw_text(f"Action: {self.action_names[action]}", (10, y_offset), 
                           color=self.config.GREEN)
             y_offset += 25
-            self._draw_text(f"Reward: {reward:.2f}", (10, y_offset))
+            
+            # Show both current and total rewards
+            self._draw_text("Current Reward:", (10, y_offset), self.config.GRAY)
+            self._draw_text(f"{reward:.1f}", (140, y_offset), 
+                          self.config.RED if reward < 0 else self.config.GREEN)
+            y_offset += 25
+            
+            self._draw_text("Total Reward:", (10, y_offset), self.config.GRAY)
+            self._draw_text(f"{self.total_reward:.1f}", (140, y_offset),
+                          self.config.RED if self.total_reward < 0 else self.config.GREEN)
             y_offset += 40
             
             # Section 3: Q-values
@@ -91,16 +105,20 @@ class LearningVisualizer:
             y_offset += 25
             
             # Draw Q-value bars
-            bar_width = min(70, (self.width - 80) // 3)  # Adjust bar width based on surface width
+            bar_width = min(70, (self.width - 80) // 3)
             bar_spacing = 20
             bar_max_height = 80
             
             # Calculate total width of all bars
             total_bars_width = (bar_width + bar_spacing) * 3 - bar_spacing
-            start_x = (self.width - total_bars_width) // 2  # Center the bars
+            start_x = (self.width - total_bars_width) // 2
             
-            for i, (action_name, q_val) in enumerate(zip(self.action_names, agent.q_table.get(tuple(state), np.zeros(3)))):
-                normalized_height = min(abs(float(q_val)), bar_max_height)
+            # Get Q-values for current state
+            q_values = agent.q_table.get(tuple(state), np.zeros(3))
+            max_q = max(abs(max(q_values)), abs(min(q_values)), 1.0)
+            
+            for i, (action_name, q_val) in enumerate(zip(self.action_names, q_values)):
+                normalized_height = (abs(float(q_val)) / max_q) * bar_max_height
                 height = max(1, int(normalized_height))
                 
                 x = start_x + i * (bar_width + bar_spacing)
@@ -120,19 +138,19 @@ class LearningVisualizer:
                 self._draw_centered_text(action_name, y_offset + bar_max_height + 10, 
                                       self.config.WHITE, x, bar_width)
             
-            # Section 4: Statistics
+            # Section 4: Agent Statistics
             y_offset += bar_max_height + 60
             
             # Draw statistics in a grid layout
             stats = [
                 ("Epsilon", f"{agent.epsilon:.3f}"),
+                ("Score", str(agent.best_score)),
                 ("Exploration", str(agent.exploration_steps)),
-                ("Exploitation", str(agent.exploitation_steps)),
-                ("Training Steps", str(agent.training_steps))
+                ("Exploitation", str(agent.exploitation_steps))
             ]
             
             # Calculate columns and spacing
-            col_width = self.width // 2 - 20  # Leave margin
+            col_width = self.width // 2 - 20
             row_height = 25
             
             for i, (label, value) in enumerate(stats):
@@ -145,7 +163,6 @@ class LearningVisualizer:
                 label_surface = self.font.render(f"{label}:", True, self.config.GRAY)
                 value_surface = self.font.render(str(value), True, self.config.WHITE)
                 
-                # Adjust value position based on label width
                 self.surface.blit(label_surface, (x, y))
                 self.surface.blit(value_surface, (x + label_surface.get_width() + 10, y))
             
@@ -157,6 +174,10 @@ class LearningVisualizer:
             self.surface.fill(self.config.BLACK)
             self._draw_text("Visualization Error", (10, 10), self.config.RED)
             return self.surface
+        
+    def reset(self):
+        """Reset total reward counter"""
+        self.total_reward = 0
     
     def _draw_centered_text(self, text: str, y: int, color, x=None, width=None):
         """Draw text centered horizontally"""
@@ -314,6 +335,10 @@ class SnakeGameAI:
         self.frame_iteration = 0
         self.steps_without_food = 0
         self.total_reward = 0
+
+        # Reset visualizer
+        if hasattr(self, 'learning_viz'):
+            self.learning_viz.reset()
 
         # Reset visualization states
         self.current_step = 0
