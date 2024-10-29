@@ -27,11 +27,6 @@ class Config:
         self.WINDOW_WIDTH = int(self.WINDOW_WIDTH)
         self.WINDOW_HEIGHT = int(self.WINDOW_HEIGHT)
         self.BLOCK_SIZE = int(self.BLOCK_SIZE)
-
-        # Exploration-Exploitation settings
-        self.EPSILON_START = 1.0       # Start with 100% exploration
-        self.EPSILON_END = 0.01        # End with 1% exploration
-        self.EPSILON_DECAY = 0.995     # Decay rate for exploration
         
         # Episode settings for exploration phases
         self.EXPLORATION_EPISODES = 200  # Heavy exploration phase
@@ -56,10 +51,15 @@ class Config:
         self.LEARNING_RATE = 0.01
         self.GAMMA = 0.95
         self.EPSILON = 1.0
-        self.EPSILON_DECAY = 0.995
+        self.EPSILON_DECAY = 0.998
         self.EPSILON_MIN = 0.01
         self.BATCH_SIZE = 32
         self.MEMORY_SIZE = 100000
+
+        # Exploration-Exploitation settings
+        self.EPSILON_START = 1.0       # Start with 100% exploration
+        self.EPSILON_END = 0.01        # End with 1% exploration
+        self.EPSILON_DECAY = 0.995     # Decay rate for exploration
 
         # File settings
         self.SAVE_DIR = "models"
@@ -399,7 +399,6 @@ class SnakeGameAI:
             self.learning_viz.reset()
 
         # Reset visualization states
-        self.current_step = 0
         return self._get_state()
 
     def _place_food(self) -> List[int]:
@@ -693,133 +692,85 @@ class QLearningAgent:
         self.config = config
         self.state_size = state_size
         self.action_size = action_size
-
-        # Q-learning parameters
         self.q_table = {}
+        
+        # Learning parameters
         self.learning_rate = config.LEARNING_RATE
         self.gamma = config.GAMMA
-        self.epsilon = config.EPSILON
+        
+        # Exploration parameters
+        self.epsilon = config.EPSILON_START  # Start with maximum exploration
         self.epsilon_decay = config.EPSILON_DECAY
         self.epsilon_min = config.EPSILON_MIN
-
-        # Experience replay
-        self.memory = ExperienceReplay(config.MEMORY_SIZE)
-        self.batch_size = config.BATCH_SIZE
-
+        
         # Training statistics
         self.training_steps = 0
         self.exploration_steps = 0
         self.exploitation_steps = 0
         self.best_score = 0
         self.episode_rewards = []
+        self.current_episode = 0
 
-        # Visualization data
-        self.last_q_update = None
-
-        # Exploration-Exploitation parameters
-        self.epsilon = config.EPSILON  # Probability of exploration
-        self.epsilon_decay = config.EPSILON_DECAY  # How fast to reduce exploration
-        self.epsilon_min = config.EPSILON_MIN  # Minimum exploration probability
-        
-        # Counters for tracking decision types
-        self.exploration_steps = 0  # Times agent chose random action (exploration)
-        self.exploitation_steps = 0  # Times agent chose best known action (exploitation)
-
-        def get_exploration_ratio(self) -> float:
-            """Calculate the current exploration ratio"""
-            total_steps = self.exploration_steps + self.exploitation_steps
-            if total_steps == 0:
-                return 0.0
-            return self.exploration_steps / total_steps
+    def get_exploration_ratio(self) -> float:
+        """Calculate the current exploration ratio"""
+        total_steps = self.exploration_steps + self.exploitation_steps
+        if total_steps == 0:
+            return 0.0
+        return self.exploration_steps / total_steps
 
     def get_action(self, state: np.ndarray, training: bool = True) -> int:
-        """Get action using epsilon-greedy policy"""
+        """Get action using epsilon-greedy policy with proper exploration"""
         state_key = tuple(state)
         
-        # Initialize Q-values for new state if needed
-        if state_key not in self.q_table:
-            self.q_table[state_key] = np.zeros(self.action_size)
-        
-        # Exploration: Choose random action with probability epsilon
-        if training and random.random() < self.epsilon:
-            self.exploration_steps += 1
-            return random.randint(0, self.action_size-1)
-        
-        # Exploitation: Choose best known action
-        self.exploitation_steps += 1
-        return np.argmax(self.q_table[state_key])
-
-    def get_action(self, state: np.ndarray, training: bool = True) -> int:
-        """Get action using epsilon-greedy policy with visualization support"""
-        state_key = tuple(state)
-
         # Initialize Q-values for new state
         if state_key not in self.q_table:
             self.q_table[state_key] = np.zeros(self.action_size)
-
-        # Exploration
-        if training and random.random() < self.epsilon:
-            self.exploration_steps += 1
-            return random.randint(0, self.action_size - 1)
-
+        
+        # During training, use epsilon-greedy
+        if training:
+            # Ensure high exploration in early episodes
+            if random.random() < self.epsilon:
+                self.exploration_steps += 1
+                return random.randint(0, self.action_size-1)
+            
         # Exploitation
         self.exploitation_steps += 1
         return np.argmax(self.q_table[state_key])
+    
+    def update_epsilon(self, episode: int):
+        """Update epsilon based on episode number"""
+        # Decay epsilon
+        if self.epsilon > self.epsilon_min:
+            self.epsilon = max(
+                self.epsilon_min,
+                self.epsilon * self.epsilon_decay
+            )
+        self.current_episode = episode
 
-    def learn(
-        self,
-        state: np.ndarray,
-        action: int,
-        reward: float,
-        next_state: np.ndarray,
-        done: bool,
-    ):
-        """Update Q-values and store experience"""
-        # Store experience
-        self.memory.push(state, action, reward, next_state, done)
-
-        # Convert states to tuples for dictionary keys
+    def learn(self, state, action, reward, next_state, done):
+        """Update Q-values using Q-learning update rule"""
         state_key = tuple(state)
         next_state_key = tuple(next_state)
-
+        
         # Initialize Q-values for new states
         if state_key not in self.q_table:
             self.q_table[state_key] = np.zeros(self.action_size)
         if next_state_key not in self.q_table:
             self.q_table[next_state_key] = np.zeros(self.action_size)
-
+        
         # Q-learning update
         old_value = self.q_table[state_key][action]
         next_max = np.max(self.q_table[next_state_key])
         new_value = old_value + self.learning_rate * (
-            reward + (0 if done else self.gamma * next_max) - old_value
-        )
-
+            reward + (0 if done else self.gamma * next_max) - old_value)
+        
         self.q_table[state_key][action] = new_value
-
-        # Store update information for visualization
-        self.last_q_update = {
-            "old_q": old_value,
-            "new_q": new_value,
-            "reward": reward,
-            "next_max_q": next_max,
-        }
-
-        # Update training statistics
         self.training_steps += 1
 
-        # Decay epsilon
-        if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
-
-    def replay(self):
-        """Learn from stored experiences"""
-        if len(self.memory) < self.batch_size:
-            return
-
-        batch = self.memory.sample(self.batch_size)
-        for state, action, reward, next_state, done in batch:
-            self.learn(state, action, reward, next_state, done)
+    def reset_counters(self):
+        """Reset exploration/exploitation counters"""
+        self.exploration_steps = 0
+        self.exploitation_steps = 0
 
     def save(self, filename: str = None):
         """Save agent state with additional information"""
@@ -923,85 +874,68 @@ class TrainingStats:
 
 
 def train(config: Config, load_existing: bool = True, episodes: int = 1000):
-    """Enhanced training function with visualization and progress tracking"""
+    """Enhanced training function with proper exploration management"""
     env = SnakeGameAI(config)
     agent = QLearningAgent(config)
     stats = TrainingStats()
-
+    
     if load_existing:
         if not agent.load():
             print("No existing model found or loading failed. Starting fresh training.")
-
+    
     try:
-        best_score = agent.best_score
         for episode in range(episodes):
             state = env.reset()
             episode_reward = 0
             steps = 0
-            current_action = None
-            current_reward = 0
-
+            
+            # Reset visualizer for new episode
+            env.learning_viz.reset()
+            
             while True:
                 # Get and perform action
-                action = agent.get_action(state)
+                action = agent.get_action(state, training=True)  # Ensure training mode
                 reward, done, score = env.step(action)
                 next_state = env._get_state()
-
-                # Store current action and reward for visualization
-                current_action = action
-                current_reward = reward
-
+                
                 # Learn from experience
                 agent.learn(state, action, reward, next_state, done)
-
-                # Perform experience replay
-                if len(agent.memory) >= config.BATCH_SIZE:
-                    agent.replay()
-
+                
                 episode_reward += reward
                 steps += 1
                 state = next_state
-
+                
                 # Update visualization
-                env.render(
-                    agent, show_info=True, action=current_action, reward=current_reward
-                )
+                env.render(agent, show_info=True, action=action, reward=reward)
                 env.clock.tick(config.SPEED)
-
+                
                 if done:
                     break
-
+            
+            # Update epsilon after each episode
+            agent.update_epsilon(episode)
+            
             # Update statistics
             stats.update(score, steps, episode_reward)
-            current_stats = stats.get_stats()
-
-            # Update best score
+            
+            # Save best model
             if score > agent.best_score:
-                best_score = score
-                agent.best_score = best_score
-                print(f"\nNew best score: {best_score}! Saving best model...")
-                agent.save(config.Q_TABLE_FILE + ".best")
-
-            # Save progress periodically
-            if episode % 50 == 0:
-                agent.save()
-
-                # Print progress
+                agent.best_score = score
+                agent.save(config.Q_TABLE_FILE + '.best')
+            
+            # Print progress
+            if episode % 10 == 0:
                 print(f"\nEpisode: {episode}")
                 print(f"Score: {score}")
-                print(f"Average Score: {current_stats['avg_score']:.2f}")
-                print(f"Best Score: {agent.best_score}")
                 print(f"Epsilon: {agent.epsilon:.3f}")
-                print(f"Steps: {steps}")
-                print(f"Total Reward: {episode_reward:.2f}")
+                print(f"Exploration Ratio: {agent.exploration_steps/(agent.exploration_steps + agent.exploitation_steps):.2f}")
                 print("-" * 50)
-
+            
     except KeyboardInterrupt:
         print("\nTraining interrupted by user")
     finally:
-        # Save final state
         agent.save()
-
+        
     return agent, stats
 
 
