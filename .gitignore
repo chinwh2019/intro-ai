@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+.venv
+ENV/
+
+# Model files and data
+*.bin
+*.pt
+*.pth
+*.onnx
+*.safetensors
+models/
+data/
+datasets/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs and temporary files
+logs/
+*.log
+tmp/
+temp/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Testing
+.coverage
+coverage/
+.pytest_cache/
+
+# OS specific
+.DS_Store
+Thumbs.db
