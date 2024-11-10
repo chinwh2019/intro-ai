@@ -49,3 +49,5 @@ coverage/
 # OS specific
 .DS_Store
 Thumbs.db
+
+mypy.ini
