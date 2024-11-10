@@ -4,16 +4,19 @@ This repository contains demo code and implementations of various algorithms for
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Project Structure](#project-structure)
-- [Search Algorithms](#search-algorithms)
-- [Machine Learning](#machine-learning)
-- [Reinforcement Learning](#reinforcement-learning)
-- [Generative AI](#generative-ai)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Contributing](#contributing)
-- [License](#license)
+- [Introduction to Artificial Intelligence](#introduction-to-artificial-intelligence)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Project Structure](#project-structure)
+  - [Search Algorithms](#search-algorithms)
+    - [Maze Solver](#maze-solver)
+  - [Machine Learning](#machine-learning)
+  - [Reinforcement Learning](#reinforcement-learning)
+  - [Generative AI](#generative-ai)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Contributing](#contributing)
+  - [License](#license)
 
 ## Overview
 
@@ -55,7 +58,7 @@ For more details on the maze solver, refer to the [SEARCH.md](search/SEARCH.md) 
 
 ## Reinforcement Learning
 
-[Coming Soon]
+Refer to the document in the folder of [reinforcement_learning](reinforcement_learning/RL.md)
 
 ## Generative AI
 
