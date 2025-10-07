@@ -50,4 +50,7 @@ coverage/
 .DS_Store
 Thumbs.db
 
+# Internal planning and design documents
+docs/
+
 mypy.ini
