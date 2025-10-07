@@ -9,7 +9,15 @@ from modules.search.core.state import State
 class Maze:
     """Maze environment with procedural generation"""
 
-    def __init__(self, width: int, height: int, complexity: float = 0.75):
+    def __init__(
+        self,
+        width: int,
+        height: int,
+        complexity: float = 0.75,
+        start_pos: Tuple[int, int] = None,
+        goal_pos: Tuple[int, int] = None,
+        random_start_goal: bool = False
+    ):
         self.width = width
         self.height = height
         self.complexity = complexity
@@ -17,9 +25,16 @@ class Maze:
         # Initialize grid (0 = passable, 1 = wall)
         self.grid = [[0 for _ in range(width)] for _ in range(height)]
 
-        # Generate maze
-        self.start = (1, 1)
-        self.goal = (height - 2, width - 2)
+        # Set start and goal positions
+        if random_start_goal:
+            # Random positions
+            self.start = self._get_random_position()
+            self.goal = self._get_random_position(exclude=[self.start])
+        else:
+            # Use provided or default positions
+            self.start = start_pos if start_pos else (1, 1)
+            self.goal = goal_pos if goal_pos else (height - 2, width - 2)
+
         self.generate_maze()
 
     def generate_maze(self):
@@ -117,3 +132,42 @@ class Maze:
     def euclidean_distance(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> float:
         """Euclidean distance heuristic"""
         return ((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)**0.5
+
+    def _get_random_position(self, exclude: List[Tuple[int, int]] = None) -> Tuple[int, int]:
+        """Get random valid position in maze"""
+        exclude = exclude or []
+        attempts = 0
+        max_attempts = 100
+
+        while attempts < max_attempts:
+            r = random.randint(1, self.height - 2)
+            c = random.randint(1, self.width - 2)
+            pos = (r, c)
+
+            if pos not in exclude:
+                return pos
+
+            attempts += 1
+
+        # Fallback to corners if random fails
+        corners = [
+            (1, 1),
+            (1, self.width - 2),
+            (self.height - 2, 1),
+            (self.height - 2, self.width - 2)
+        ]
+        for corner in corners:
+            if corner not in exclude:
+                return corner
+
+        return (1, 1)  # Final fallback
+
+    def set_start_goal(self, start: Tuple[int, int] = None, goal: Tuple[int, int] = None):
+        """Set start and goal positions after maze creation"""
+        if start:
+            self.start = start
+            self.grid[start[0]][start[1]] = 0  # Ensure passable
+
+        if goal:
+            self.goal = goal
+            self.grid[goal[0]][goal[1]] = 0  # Ensure passable

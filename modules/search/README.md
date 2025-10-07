@@ -67,22 +67,71 @@ python run_search.py --preset simple
 
 ## Configuration
 
-Modify parameters in `modules/search/config.py` or use presets:
+### Method 1: Use Presets (Easiest)
 
 ```python
-from modules.search.config import config, load_preset
+from modules.search.config import load_preset
 
-# Use preset
-load_preset('fast')  # Fast animation
-load_preset('simple')  # Small maze
-load_preset('detailed')  # Show more info
+load_preset('fast')       # Fast animation
+load_preset('simple')     # Small 20x15 maze
+load_preset('detailed')   # Larger cells, show numbers
+load_preset('large_maze') # 60x40 maze
+```
 
-# Or customize
+### Method 2: Modify Parameters
+
+```python
+from modules.search.config import config
+
+# Change maze size
 config.MAZE_WIDTH = 50
 config.MAZE_HEIGHT = 40
+
+# Change animation
 config.ANIMATION_SPEED = 2.0
+config.STEP_DELAY = 0.02
+
+# Change appearance
 config.SHOW_NUMBERS = True
+config.CELL_SIZE = 25
 ```
+
+### Method 3: Custom Start/Goal Positions
+
+```python
+from modules.search.config import config
+
+# Option A: Set specific positions
+config.START_POSITION = (5, 5)    # (row, col)
+config.GOAL_POSITION = (20, 35)   # (row, col)
+
+# Option B: Randomize on each reset
+config.RANDOM_START_GOAL = True
+```
+
+### Method 4: Custom Heuristics for A*
+
+```python
+from modules.search.algorithms.astar import AStar
+from modules.search.core.environment import Maze
+
+maze = Maze(30, 20)
+
+# Use built-in heuristics
+astar = AStar(maze, heuristic='manhattan')  # Default
+astar = AStar(maze, heuristic='euclidean')  # Euclidean distance
+astar = AStar(maze, heuristic='zero')       # No heuristic (= UCS)
+astar = AStar(maze, heuristic='custom')     # Use my_custom_heuristic
+
+# Or define your own heuristic function
+def my_heuristic(pos1, pos2):
+    manhattan = abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+    return 1.2 * manhattan  # Weighted (experiment!)
+
+astar = AStar(maze, heuristic_func=my_heuristic)
+```
+
+See `modules/search/heuristics.py` for more heuristic examples and templates!
 
 ## File Structure
 
