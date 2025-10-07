@@ -49,7 +49,10 @@ class SearchApp:
         print("  SPACE: Pause/Resume")
         print("  S: Step (when paused)")
         print("  R: Reset maze")
+        print("  T: Toggle random start/goal")
         print("  Q: Quit")
+        print("=" * 50)
+        print(f"Random start/goal: {'ON' if config.RANDOM_START_GOAL else 'OFF'}")
         print("=" * 50)
 
     def _create_maze(self) -> Maze:
@@ -130,6 +133,13 @@ class SearchApp:
 
                 elif event.key == pygame.K_r:
                     self.reset_maze()
+
+                elif event.key == pygame.K_t:
+                    # Toggle random start/goal mode
+                    config.RANDOM_START_GOAL = not config.RANDOM_START_GOAL
+                    mode = "ON" if config.RANDOM_START_GOAL else "OFF"
+                    print(f"\nRandom start/goal: {mode}")
+                    print("Press R to generate new maze with this setting")
 
                 elif event.key == pygame.K_q:
                     self.running = False

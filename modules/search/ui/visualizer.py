@@ -192,6 +192,13 @@ class SearchVisualizer:
         status = self.font.render(status_text, True, status_color)
         self.screen.blit(status, (10, y_offset))
 
+        # Random mode indicator
+        y_offset += 40
+        random_mode = "Random: ON" if config.RANDOM_START_GOAL else "Random: OFF"
+        random_color = config.COLOR_BUTTON_ACTIVE if config.RANDOM_START_GOAL else config.COLOR_TEXT
+        random_text = self.small_font.render(random_mode, True, random_color)
+        self.screen.blit(random_text, (10, y_offset))
+
         # Legend
         y_offset += 60
         legend_title = self.font.render("Legend:", True, config.COLOR_TEXT)
@@ -239,13 +246,23 @@ class SearchVisualizer:
             2
         )
 
-        # Instructions
-        instructions = self.small_font.render(
-            "SPACE: Pause/Resume | R: Reset | Q: Quit | 1-5: Select Algorithm",
+        # Instructions (split into two lines)
+        instructions_line1 = self.small_font.render(
+            "1-5: Select Algorithm | SPACE: Pause/Resume | S: Step | R: Reset",
             True,
             config.COLOR_TEXT
         )
+        instructions_line2 = self.small_font.render(
+            "T: Toggle Random Start/Goal | Q: Quit",
+            True,
+            config.COLOR_TEXT
+        )
+
         self.screen.blit(
-            instructions,
-            (config.SIDEBAR_WIDTH + 10, config.CONTROL_PANEL_HEIGHT // 2 - 8)
+            instructions_line1,
+            (config.SIDEBAR_WIDTH + 10, config.CONTROL_PANEL_HEIGHT // 2 - 18)
+        )
+        self.screen.blit(
+            instructions_line2,
+            (config.SIDEBAR_WIDTH + 10, config.CONTROL_PANEL_HEIGHT // 2 + 5)
         )
