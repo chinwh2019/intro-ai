@@ -1,0 +1,53 @@
+name: Deploy Search Module to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'modules/search/**'
+      - 'web/search/**'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v3
+
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: 📦 Install Pygbag
+      run: |
+        pip install pygbag
+        echo "✓ Pygbag installed"
+
+    - name: 🔨 Build with Pygbag
+      run: |
+        cd web/search
+        echo "Building search module..."
+        pygbag --build main.py
+        echo "✓ Build complete"
+
+    - name: 🚀 Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./web/search/build/web
+        destination_dir: search
+        cname: false
+
+    - name: 📊 Deployment Summary
+      run: |
+        echo "════════════════════════════════════════"
+        echo "✅ Search Module Deployed Successfully!"
+        echo "════════════════════════════════════════"
+        echo ""
+        echo "🌐 URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/search/"
+        echo ""
+        echo "Wait 1-2 minutes for GitHub Pages to update"
+        echo ""

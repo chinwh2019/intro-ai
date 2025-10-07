@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introduction to AI - Interactive Learning Modules</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: #f8f8f2;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(40, 42, 54, 0.6);
+            border-radius: 12px;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #8be9fd, #50fa7b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.3em;
+            color: #6272a4;
+            margin-top: 10px;
+        }
+
+        .modules {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .module-card {
+            background: #282a36;
+            border-radius: 12px;
+            padding: 30px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 2px solid #44475a;
+        }
+
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(139, 233, 253, 0.3);
+            border-color: #8be9fd;
+        }
+
+        .module-card.available {
+            border-color: #50fa7b;
+        }
+
+        .module-card.coming-soon {
+            opacity: 0.7;
+        }
+
+        .module-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .module-icon {
+            font-size: 2.5em;
+            margin-right: 15px;
+        }
+
+        .module-title {
+            font-size: 1.8em;
+            color: #f8f8f2;
+        }
+
+        .module-description {
+            color: #6272a4;
+            margin-bottom: 20px;
+            font-size: 1.05em;
+        }
+
+        .module-features {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .module-features li {
+            padding: 5px 0;
+            color: #f8f8f2;
+        }
+
+        .module-features li:before {
+            content: "✓ ";
+            color: #50fa7b;
+            font-weight: bold;
+        }
+
+        .launch-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #50fa7b, #8be9fd);
+            color: #1e1e2e;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+
+        .launch-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(80, 250, 123, 0.4);
+        }
+
+        .coming-soon-badge {
+            display: inline-block;
+            background: #6272a4;
+            color: #f8f8f2;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .status-live {
+            background: #50fa7b;
+            color: #1e1e2e;
+        }
+
+        .status-soon {
+            background: #ffb86c;
+            color: #1e1e2e;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6272a4;
+            font-size: 0.95em;
+        }
+
+        .tech-stack {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .tech-badge {
+            background: #44475a;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2em; }
+            .modules { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 Introduction to AI</h1>
+            <p class="subtitle">Interactive Learning Modules - No Installation Required!</p>
+            <div class="tech-stack">
+                <span class="tech-badge">🐍 Python</span>
+                <span class="tech-badge">🎮 Pygame</span>
+                <span class="tech-badge">🌐 WebAssembly</span>
+                <span class="tech-badge">📦 Pygbag</span>
+            </div>
+        </header>
+
+        <div class="modules">
+            <!-- Search Algorithms Module -->
+            <div class="module-card available">
+                <div class="module-header">
+                    <div class="module-icon">🔍</div>
+                    <div>
+                        <h2 class="module-title">Search Algorithms</h2>
+                        <span class="status-badge status-live">LIVE</span>
+                    </div>
+                </div>
+                <p class="module-description">
+                    Explore pathfinding algorithms through interactive maze solving. Watch BFS, DFS, UCS, A*, and Greedy algorithms find their way!
+                </p>
+                <ul class="module-features">
+                    <li>5 search algorithms with real-time visualization</li>
+                    <li>Custom heuristics for A* search</li>
+                    <li>Configurable start/goal positions</li>
+                    <li>Performance metrics and comparison</li>
+                    <li>Interactive controls (pause, step, reset)</li>
+                </ul>
+                <a href="search/" class="launch-button">→ Launch Module</a>
+            </div>
+
+            <!-- MDP Module -->
+            <div class="module-card coming-soon">
+                <div class="module-header">
+                    <div class="module-icon">🎲</div>
+                    <div>
+                        <h2 class="module-title">Markov Decision Processes</h2>
+                        <span class="status-badge status-soon">Coming Soon</span>
+                    </div>
+                </div>
+                <p class="module-description">
+                    Learn planning under uncertainty with value iteration and policy iteration in interactive grid worlds.
+                </p>
+                <ul class="module-features">
+                    <li>Value iteration visualization</li>
+                    <li>Policy arrows and Q-values</li>
+                    <li>Stochastic transitions</li>
+                    <li>Reward shaping</li>
+                </ul>
+                <span class="coming-soon-badge">Implementation Planned</span>
+            </div>
+
+            <!-- RL Module -->
+            <div class="module-card coming-soon">
+                <div class="module-header">
+                    <div class="module-icon">🐍</div>
+                    <div>
+                        <h2 class="module-title">Reinforcement Learning</h2>
+                        <span class="status-badge status-soon">Coming Soon</span>
+                    </div>
+                </div>
+                <p class="module-description">
+                    Watch an AI agent learn to play Snake using Q-Learning! See exploration, exploitation, and learning curves in real-time.
+                </p>
+                <ul class="module-features">
+                    <li>Q-Learning and SARSA algorithms</li>
+                    <li>Real-time training visualization</li>
+                    <li>Adjustable hyperparameters</li>
+                    <li>Episode replay and analysis</li>
+                </ul>
+                <span class="coming-soon-badge">Implementation Planned</span>
+            </div>
+
+            <!-- ML Module -->
+            <div class="module-card coming-soon">
+                <div class="module-header">
+                    <div class="module-icon">📊</div>
+                    <div>
+                        <h2 class="module-title">Machine Learning</h2>
+                        <span class="status-badge status-soon">Coming Soon</span>
+                    </div>
+                </div>
+                <p class="module-description">
+                    Explore supervised and unsupervised learning through interactive regression, classification, and clustering.
+                </p>
+                <ul class="module-features">
+                    <li>Linear & polynomial regression</li>
+                    <li>Logistic regression</li>
+                    <li>K-means clustering</li>
+                    <li>Simple neural networks</li>
+                </ul>
+                <span class="coming-soon-badge">Implementation Planned</span>
+            </div>
+
+            <!-- GenAI Module -->
+            <div class="module-card coming-soon">
+                <div class="module-header">
+                    <div class="module-icon">✨</div>
+                    <div>
+                        <h2 class="module-title">Generative AI</h2>
+                        <span class="status-badge status-soon">Coming Soon</span>
+                    </div>
+                </div>
+                <p class="module-description">
+                    Understand how AI generates text and images through Markov chains, GANs, and attention mechanisms.
+                </p>
+                <ul class="module-features">
+                    <li>Text generation with n-grams</li>
+                    <li>Simple GAN for distributions</li>
+                    <li>Attention visualization</li>
+                    <li>Latent space exploration</li>
+                </ul>
+                <span class="coming-soon-badge">Implementation Planned</span>
+            </div>
+        </div>
+
+        <footer>
+            <p><strong>Built for Education</strong></p>
+            <p>Interactive AI learning modules powered by Python, Pygame, and WebAssembly</p>
+            <p style="margin-top: 20px;">
+                <a href="https://github.com/YOUR_USERNAME/intro-ai" style="color: #8be9fd;">View on GitHub</a>
+            </p>
+            <p style="margin-top: 30px; font-size: 0.9em;">
+                Technology: Python 3.11 • Pygame • Pygbag • WebAssembly • GitHub Pages
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
