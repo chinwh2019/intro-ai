@@ -20,7 +20,7 @@ class SearchApp:
     """Main application for search algorithms"""
 
     def __init__(self):
-        self.maze = Maze(config.MAZE_WIDTH, config.MAZE_HEIGHT, config.MAZE_COMPLEXITY)
+        self.maze = self._create_maze()
         self.visualizer = SearchVisualizer(self.maze)
 
         # Available algorithms
@@ -52,6 +52,17 @@ class SearchApp:
         print("  Q: Quit")
         print("=" * 50)
 
+    def _create_maze(self) -> Maze:
+        """Create maze using current config settings"""
+        return Maze(
+            width=config.MAZE_WIDTH,
+            height=config.MAZE_HEIGHT,
+            complexity=config.MAZE_COMPLEXITY,
+            start_pos=config.START_POSITION,
+            goal_pos=config.GOAL_POSITION,
+            random_start_goal=config.RANDOM_START_GOAL
+        )
+
     def select_algorithm(self, key: str):
         """Select and start algorithm"""
         if key in self.algorithms:
@@ -70,12 +81,13 @@ class SearchApp:
     def reset_maze(self):
         """Reset maze and algorithm"""
         print("\nGenerating new maze...")
-        self.maze = Maze(config.MAZE_WIDTH, config.MAZE_HEIGHT, config.MAZE_COMPLEXITY)
+        self.maze = self._create_maze()
         self.visualizer = SearchVisualizer(self.maze)
         self.current_algorithm = None
         self.search_generator = None
         self.algorithm_complete = False
-        print("Maze reset. Select an algorithm to start.")
+        print(f"Maze reset ({config.MAZE_WIDTH}x{config.MAZE_HEIGHT}). Select an algorithm to start.")
+        print(f"Start: {self.maze.start}, Goal: {self.maze.goal}")
 
     def step_algorithm(self):
         """Execute one step of the algorithm"""

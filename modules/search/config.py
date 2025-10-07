@@ -4,7 +4,8 @@ Students can modify parameters here to change behavior
 """
 
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Optional, Callable
+
 
 @dataclass
 class SearchConfig:
@@ -20,6 +21,11 @@ class SearchConfig:
     MAZE_WIDTH: int = 40
     MAZE_HEIGHT: int = 30
     MAZE_COMPLEXITY: float = 0.75  # 0.0 to 1.0 (higher = more walls)
+
+    # Start and end point settings (None = auto-generate)
+    START_POSITION: Optional[Tuple[int, int]] = None  # (row, col) or None for auto
+    GOAL_POSITION: Optional[Tuple[int, int]] = None   # (row, col) or None for auto
+    RANDOM_START_GOAL: bool = False  # Randomize start/goal on each reset
 
     # Algorithm settings
     ANIMATION_SPEED: float = 1.0  # Multiplier for step delay
@@ -101,8 +107,16 @@ def load_preset(name: str):
     """Load a preset configuration"""
     global config
     if name in PRESETS:
-        config = PRESETS[name]
+        # Get preset config
+        preset_config = PRESETS[name]
+
+        # Update all attributes of global config
+        for attr in dir(preset_config):
+            if not attr.startswith('_') and attr.isupper():
+                setattr(config, attr, getattr(preset_config, attr))
+
         print(f"Loaded preset: {name}")
+        print(f"  Maze size: {config.MAZE_WIDTH}x{config.MAZE_HEIGHT}")
     else:
         print(f"Unknown preset: {name}")
         print(f"Available presets: {list(PRESETS.keys())}")

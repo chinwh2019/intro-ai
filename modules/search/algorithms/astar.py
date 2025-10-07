@@ -3,25 +3,52 @@ A* Search implementation
 """
 
 import heapq
-from typing import Generator
+from typing import Generator, Callable, Union
 from modules.search.core.base_algorithm import SearchAlgorithm
 from modules.search.core.state import State, Node
 
 class AStar(SearchAlgorithm):
     """A* Search with pluggable heuristic"""
 
-    def __init__(self, maze, heuristic: str = 'manhattan'):
+    def __init__(
+        self,
+        maze,
+        heuristic: Union[str, Callable] = 'manhattan',
+        heuristic_func: Callable = None
+    ):
         super().__init__(maze)
 
         # Set heuristic function
-        if heuristic == 'manhattan':
-            self.heuristic_func = maze.manhattan_distance
-        elif heuristic == 'euclidean':
-            self.heuristic_func = maze.euclidean_distance
+        # Priority: heuristic_func > heuristic (string) > default
+        if heuristic_func:
+            # Custom function provided directly
+            self.heuristic_func = heuristic_func
+            self.heuristic_name = 'custom'
+        elif callable(heuristic):
+            # Heuristic is already a function
+            self.heuristic_func = heuristic
+            self.heuristic_name = 'custom'
+        elif isinstance(heuristic, str):
+            # String name - use built-in or from heuristics module
+            if heuristic == 'manhattan':
+                self.heuristic_func = maze.manhattan_distance
+                self.heuristic_name = 'manhattan'
+            elif heuristic == 'euclidean':
+                self.heuristic_func = maze.euclidean_distance
+                self.heuristic_name = 'euclidean'
+            else:
+                # Try to get from heuristics module
+                try:
+                    from modules.search.heuristics import get_heuristic
+                    self.heuristic_func = get_heuristic(heuristic)
+                    self.heuristic_name = heuristic
+                except:
+                    self.heuristic_func = maze.manhattan_distance
+                    self.heuristic_name = 'manhattan'
         else:
+            # Default
             self.heuristic_func = maze.manhattan_distance
-
-        self.heuristic_name = heuristic
+            self.heuristic_name = 'manhattan'
 
     def search(self) -> Generator[dict, None, None]:
         """Execute A* search"""
