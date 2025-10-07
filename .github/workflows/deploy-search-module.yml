@@ -11,7 +11,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    # CRITICAL: Grant write permissions for deployment
+    permissions:
+      contents: write  # Required to push to gh-pages branch
     steps:
     - name: 📥 Checkout code
       uses: actions/checkout@v3
