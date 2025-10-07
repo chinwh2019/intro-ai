@@ -14,8 +14,12 @@ python run_search.py --preset fast
 Once running:
 - Press **1-5** to select algorithm (1=BFS, 2=DFS, 3=UCS, 4=A*, 5=Greedy)
 - Press **SPACE** to pause/resume
-- Press **R** to reset and generate a new maze
 - Press **S** to step through one iteration (when paused)
+- Press **T** to toggle random start/goal mode (see indicator in sidebar!)
+- Press **R** to reset and generate a new maze
+- Press **Q** to quit
+
+**TIP:** Press **T** then **R** multiple times to get different start/goal positions!
 
 ---
 
@@ -58,15 +62,33 @@ python run_search.py --width 50 --height 35
 
 ## 🎨 Making the Start/Goal Different Each Time
 
-**Edit `run_search.py` and add this at the top:**
+**Method 1: Use the T Key (Easiest!)**
+
+1. Run the program: `python run_search.py`
+2. Press **T** to enable random mode (watch sidebar turn green!)
+3. Press **R** to reset - you'll see different start/goal positions!
+4. Press **R** again - they'll be different again!
+
+The sidebar shows: **Random: ON** (in green) or **Random: OFF**
+
+**Method 2: Set in Code**
+
+Edit `run_search.py` and add this before `main()`:
 
 ```python
 from modules.search.config import config
-
-config.RANDOM_START_GOAL = True  # Add this line!
+config.RANDOM_START_GOAL = True  # Start with random mode ON
 ```
 
-Now each time you press `R`, start and goal will be in different places!
+**Method 3: Set Specific Positions**
+
+```python
+# In run_search.py
+config.START_POSITION = (10, 10)  # Row 10, Column 10
+config.GOAL_POSITION = (25, 35)   # Row 25, Column 35
+```
+
+Now start and goal will always be at these exact positions!
 
 ---
 
