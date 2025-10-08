@@ -3,15 +3,16 @@ Visualization system for search algorithms
 """
 
 import pygame
-from typing import Optional, Dict, Set
+from typing import Optional, Dict, Set, Callable
 from modules.search.config import config
 from modules.search.core.environment import Maze
 from modules.search.core.state import State
+from modules.search.ui.controls import SearchParameterPanel
 
 class SearchVisualizer:
     """Visualizer for search algorithms"""
 
-    def __init__(self, maze: Maze):
+    def __init__(self, maze: Maze, on_parameter_change: Callable = None):
         pygame.init()
 
         self.maze = maze
@@ -23,6 +24,7 @@ class SearchVisualizer:
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 24)
         self.small_font = pygame.font.Font(None, 16)
+        self.tiny_font = pygame.font.Font(None, 14)  # For compact legend
 
         # Calculate cell size based on maze dimensions
         maze_rect = config.get_maze_rect()
@@ -41,6 +43,22 @@ class SearchVisualizer:
         self.path: list = []
         self.solution_found = False
         self.stats: Dict = {}
+        self.current_algorithm_name: str = "None"  # Track current algorithm
+
+        # Interactive parameter panel (positioned at very bottom to avoid all overlaps)
+        self.parameter_panel = SearchParameterPanel(
+            x=10,
+            y=config.WINDOW_HEIGHT - 270,  # At very bottom (700-270=430, below random at ~420)
+            width=config.SIDEBAR_WIDTH - 20,
+            on_apply=on_parameter_change
+        )
+
+        # Set initial values from config
+        self.parameter_panel.set_parameters(
+            speed=config.ANIMATION_SPEED,
+            heuristic_weight=1.0,  # Default
+            complexity=config.MAZE_COMPLEXITY
+        )
 
     def update_state(self, viz_state: Dict):
         """Update visualization state"""
@@ -50,6 +68,10 @@ class SearchVisualizer:
         self.path = viz_state.get('path', [])
         self.solution_found = viz_state.get('solution_found', False)
         self.stats = viz_state.get('stats', {})
+
+    def set_algorithm(self, algorithm_name: str):
+        """Set the current algorithm name for display"""
+        self.current_algorithm_name = algorithm_name
 
     def render(self):
         """Render current state"""
@@ -161,8 +183,67 @@ class SearchVisualizer:
         title = self.font.render("Search Statistics", True, config.COLOR_TEXT)
         self.screen.blit(title, (10, 10))
 
-        # Statistics
-        y_offset = 50
+        # Current Algorithm indicator
+        y_offset = 40
+        algo_label = self.small_font.render("Algorithm:", True, config.COLOR_TEXT)
+        self.screen.blit(algo_label, (10, y_offset))
+
+        algo_name_color = config.COLOR_BUTTON_ACTIVE if self.current_algorithm_name != "None" else config.COLOR_TEXT
+        algo_name = self.font.render(self.current_algorithm_name, True, algo_name_color)
+        self.screen.blit(algo_name, (10, y_offset + 18))
+
+        # Algorithm selection guide - show key mappings
+        y_offset = 75
+        keys_title = self.tiny_font.render("Select Algorithm:", True, (180, 180, 180))
+        self.screen.blit(keys_title, (10, y_offset))
+        y_offset += 16
+
+        key_mappings = [
+            "1: BFS      2: DFS",
+            "3: UCS      4: A*",
+            "5: Greedy"
+        ]
+        for mapping in key_mappings:
+            keys_text = self.tiny_font.render(mapping, True, (150, 150, 150))
+            self.screen.blit(keys_text, (10, y_offset))
+            y_offset += 14
+
+        # Legend - Moved to TOP after title (compact 2-column)
+        y_offset += 10
+        legend_title = self.small_font.render("Legend:", True, config.COLOR_TEXT)
+        self.screen.blit(legend_title, (10, y_offset))
+        y_offset += 20
+
+        # Two columns to save space
+        legend_items_col1 = [
+            ("Start", config.COLOR_START),
+            ("Goal", config.COLOR_GOAL),
+            ("Explored", config.COLOR_EXPLORED),
+        ]
+        legend_items_col2 = [
+            ("Frontier", config.COLOR_FRONTIER),
+            ("Path", config.COLOR_PATH),
+            ("Current", config.COLOR_CURRENT),
+        ]
+
+        # Draw column 1
+        legend_y = y_offset
+        for label, color in legend_items_col1:
+            pygame.draw.rect(self.screen, color, (10, legend_y, 12, 12))
+            text = self.tiny_font.render(label, True, config.COLOR_TEXT)
+            self.screen.blit(text, (25, legend_y + 1))
+            legend_y += 16
+
+        # Draw column 2
+        legend_y = y_offset
+        for label, color in legend_items_col2:
+            pygame.draw.rect(self.screen, color, (140, legend_y, 12, 12))
+            text = self.tiny_font.render(label, True, config.COLOR_TEXT)
+            self.screen.blit(text, (155, legend_y + 1))
+            legend_y += 16
+
+        # Statistics - AFTER legend
+        y_offset = 215  # Fixed position after legend
         stats_to_show = [
             ("Nodes Expanded", self.stats.get('nodes_expanded', 0)),
             ("Nodes Generated", self.stats.get('nodes_generated', 0)),
@@ -199,32 +280,12 @@ class SearchVisualizer:
         random_text = self.small_font.render(random_mode, True, random_color)
         self.screen.blit(random_text, (10, y_offset))
 
-        # Legend
-        y_offset += 60
-        legend_title = self.font.render("Legend:", True, config.COLOR_TEXT)
-        self.screen.blit(legend_title, (10, y_offset))
-        y_offset += 30
+        # Draw interactive parameter panel at bottom (legend already at top)
+        self.parameter_panel.draw(self.screen)
 
-        legend_items = [
-            ("Start", config.COLOR_START),
-            ("Goal", config.COLOR_GOAL),
-            ("Explored", config.COLOR_EXPLORED),
-            ("Frontier", config.COLOR_FRONTIER),
-            ("Path", config.COLOR_PATH),
-            ("Current", config.COLOR_CURRENT),
-        ]
-
-        for label, color in legend_items:
-            # Color box
-            pygame.draw.rect(
-                self.screen,
-                color,
-                (10, y_offset, 20, 20)
-            )
-            # Label
-            text = self.small_font.render(label, True, config.COLOR_TEXT)
-            self.screen.blit(text, (35, y_offset + 3))
-            y_offset += 25
+    def handle_parameter_event(self, event: pygame.event.Event):
+        """Pass event to parameter panel"""
+        self.parameter_panel.handle_event(event)
 
     def _render_control_panel(self):
         """Render top control panel"""
