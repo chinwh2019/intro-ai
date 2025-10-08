@@ -27,7 +27,8 @@ class MDP:
         rewards: Dict[Tuple[State, str], float],
         discount: float,
         start_state: State,
-        terminal_states: Set[State]
+        terminal_states: Set[State],
+        terminal_rewards: Dict[State, float] = None  # Map terminal states to their rewards
     ):
         self.states = states
         self.actions = actions
@@ -36,6 +37,7 @@ class MDP:
         self.discount = discount
         self.start_state = start_state
         self.terminal_states = terminal_states
+        self.terminal_rewards = terminal_rewards or {}  # goal: +1.0, danger: -1.0
 
     def get_actions(self, state: State) -> List[str]:
         """Get available actions in a state"""

@@ -36,10 +36,18 @@ class MDPApp:
         for state in self.solver.iterate():
             self.iterations.append(state)
 
-        # Extract final values and policy
-        if self.iterations:
-            final_state = self.iterations[-1]
-            self.visualizer.update_state(final_state)
+        # Show INITIAL state (zeros, except terminals) not final converged state
+        # This way students see the grid start fresh
+        initial_state = {
+            'values': {s: self.solver.values[s] if self.solver.mdp.is_terminal(s) else 0.0
+                      for s in self.solver.mdp.states},
+            'q_values': {(s, a): self.solver.values[s] if self.solver.mdp.is_terminal(s) else 0.0
+                        for s in self.solver.mdp.states for a in self.solver.mdp.actions},
+            'policy': {},  # No policy initially
+            'iteration': 0,
+            'converged': False,
+        }
+        self.visualizer.update_state(initial_state)
 
         # Control state
         self.running = True
@@ -92,9 +100,17 @@ class MDPApp:
         for state in self.solver.iterate():
             self.iterations.append(state)
 
-        if self.iterations:
-            final_state = self.iterations[-1]
-            self.visualizer.update_state(final_state)
+        # Show initial state (zeros except terminals)
+        initial_state = {
+            'values': {s: self.solver.values[s] if self.solver.mdp.is_terminal(s) else 0.0
+                      for s in self.solver.mdp.states},
+            'q_values': {(s, a): self.solver.values[s] if self.solver.mdp.is_terminal(s) else 0.0
+                        for s in self.solver.mdp.states for a in self.solver.mdp.actions},
+            'policy': {},
+            'iteration': 0,
+            'converged': False,
+        }
+        self.visualizer.update_state(initial_state)
 
         self.walker_pos = self.grid_world.start_pos
         self.current_iteration = 0
@@ -112,6 +128,9 @@ class MDPApp:
         self.policy_demo_mode = not self.policy_demo_mode
 
         if self.policy_demo_mode:
+            # Show final converged state for demo (need policy!)
+            if self.iterations:
+                self.visualizer.update_state(self.iterations[-1])
             # Start walker at random non-terminal position
             valid_starts = [
                 s.position for s in self.grid_world.mdp.states
@@ -125,6 +144,17 @@ class MDPApp:
             self.terminal_state_message = ""
             print("\n✓ Policy demo started - watch the agent follow optimal policy!")
         else:
+            # Return to initial state when stopping demo
+            initial_state = {
+                'values': {s: self.solver.values[s] if self.solver.mdp.is_terminal(s) else 0.0
+                          for s in self.solver.mdp.states},
+                'q_values': {(s, a): self.solver.values[s] if self.solver.mdp.is_terminal(s) else 0.0
+                            for s in self.solver.mdp.states for a in self.solver.mdp.actions},
+                'policy': {},
+                'iteration': 0,
+                'converged': False,
+            }
+            self.visualizer.update_state(initial_state)
             self.walker_pos = self.grid_world.start_pos
             self.terminal_state_message = ""
             print("Policy demo stopped")

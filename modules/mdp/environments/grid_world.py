@@ -142,6 +142,12 @@ class GridWorld:
                 else:
                     rewards[(state, action)] = self.living_reward
 
+        # Terminal rewards for display
+        terminal_rewards = {
+            State(self.goal_pos): 1.0,
+            State(self.danger_pos): -1.0
+        }
+
         return MDP(
             states=states,
             actions=self.actions,
@@ -149,7 +155,8 @@ class GridWorld:
             rewards=rewards,
             discount=self.discount,
             start_state=start_state,
-            terminal_states=terminal_states
+            terminal_states=terminal_states,
+            terminal_rewards=terminal_rewards
         )
 
     def _get_next_position(self, pos: Tuple[int, int], action: str) -> Tuple[int, int]:

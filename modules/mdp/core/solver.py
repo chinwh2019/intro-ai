@@ -17,6 +17,15 @@ class ValueIteration:
         self.q_values: Dict[Tuple[State, str], float] = {}
         self.policy: Dict[State, str] = {}
 
+        # Set terminal state values based on their terminal rewards
+        for state in mdp.terminal_states:
+            if state in mdp.terminal_rewards:
+                reward = mdp.terminal_rewards[state]
+                self.values[state] = reward
+                # Set Q-values for all actions to reward
+                for action in mdp.actions:
+                    self.q_values[(state, action)] = reward
+
         # Statistics
         self.iteration_count = 0
         self.converged = False
@@ -36,6 +45,9 @@ class ValueIteration:
             # Update value for each state
             for state in self.mdp.states:
                 if self.mdp.is_terminal(state):
+                    # Keep terminal states at their reward values
+                    if state in self.mdp.terminal_rewards:
+                        self.values[state] = self.mdp.terminal_rewards[state]
                     continue
 
                 # Compute Q-values for all actions
