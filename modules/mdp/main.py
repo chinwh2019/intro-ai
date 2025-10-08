@@ -52,6 +52,8 @@ class MDPApp:
         # Control state
         self.running = True
         self.show_learning_process = False
+        self.learning_paused = False  # For stepping through animation
+        self.step_mode = False  # Single step flag
         self.policy_demo_mode = False
         self.current_iteration = 0
         self.walker_pos = self.grid_world.start_pos
@@ -77,7 +79,8 @@ class MDPApp:
         print(f"\nValue iteration converged in {self.solver.iteration_count} iterations")
         print("\nControls:")
         print("  V: Toggle values | P: Toggle policy | Q: Toggle Q-values")
-        print("  L: Show learning process | D: Policy demo | R: Reset")
+        print("  L: Show learning process | SPACE: Pause learning | S: Step (when paused)")
+        print("  D: Policy demo | R: Reset | Arrow Keys: Manual control")
         print("=" * 60)
 
     def reset(self):
@@ -115,6 +118,8 @@ class MDPApp:
         self.walker_pos = self.grid_world.start_pos
         self.current_iteration = 0
         self.show_learning_process = False
+        self.learning_paused = False
+        self.step_mode = False
         self.policy_demo_mode = False
         self.terminal_state_message = ""
 
@@ -163,13 +168,23 @@ class MDPApp:
         """Toggle learning process animation"""
         self.show_learning_process = not self.show_learning_process
         self.current_iteration = 0
+        self.learning_paused = False  # Start unpaused
 
         if self.show_learning_process:
             print("\n✓ Showing learning process - watch values converge!")
+            print("  Press SPACE to pause, S to step")
         else:
-            # Show final state
-            if self.iterations:
-                self.visualizer.update_state(self.iterations[-1])
+            # Show initial state when stopping
+            initial_state = {
+                'values': {s: self.solver.values[s] if self.solver.mdp.is_terminal(s) else 0.0
+                          for s in self.solver.mdp.states},
+                'q_values': {(s, a): self.solver.values[s] if self.solver.mdp.is_terminal(s) else 0.0
+                            for s in self.solver.mdp.states for a in self.solver.mdp.actions},
+                'policy': {},
+                'iteration': 0,
+                'converged': False,
+            }
+            self.visualizer.update_state(initial_state)
             print("Learning animation stopped")
 
     def update_policy_demo(self):
@@ -211,15 +226,22 @@ class MDPApp:
 
     def update_learning_animation(self):
         """Update learning process animation"""
-        if self.current_iteration < len(self.iterations):
-            self.visualizer.update_state(self.iterations[self.current_iteration])
-            self.current_iteration += 1
+        # Only auto-advance if not paused
+        if not self.learning_paused or self.step_mode:
+            if self.current_iteration < len(self.iterations):
+                self.visualizer.update_state(self.iterations[self.current_iteration])
+                self.current_iteration += 1
 
-            if self.current_iteration == len(self.iterations):
-                self.show_learning_process = False
-                print("\n✓ Learning animation complete!")
+                if self.current_iteration == len(self.iterations):
+                    self.show_learning_process = False
+                    self.learning_paused = False
+                    print("\n✓ Learning animation complete!")
 
-            pygame.time.wait(200)  # Delay between iterations
+                # Only wait if auto-playing (not stepping)
+                if not self.step_mode:
+                    pygame.time.wait(200)  # Delay between iterations
+                else:
+                    self.step_mode = False  # Reset step flag
 
     def handle_events(self):
         """Handle events"""
@@ -228,11 +250,28 @@ class MDPApp:
                 self.running = False
 
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_v:
+                # SPACE: Pause/Resume learning animation OR toggle policy
+                if event.key == pygame.K_SPACE:
+                    if self.show_learning_process:
+                        # Pause/resume learning animation
+                        self.learning_paused = not self.learning_paused
+                        print("Learning animation: " + ("PAUSED (press S to step)" if self.learning_paused else "RESUMED"))
+                    else:
+                        # Toggle policy display
+                        config.SHOW_POLICY = not config.SHOW_POLICY
+                        print(f"Policy: {'ON' if config.SHOW_POLICY else 'OFF'}")
+
+                # S: Step through learning animation when paused
+                elif event.key == pygame.K_s:
+                    if self.show_learning_process and self.learning_paused:
+                        self.step_mode = True
+                        print(f"Step to iteration {self.current_iteration + 1}")
+
+                elif event.key == pygame.K_v:
                     config.SHOW_VALUES = not config.SHOW_VALUES
                     print(f"Values: {'ON' if config.SHOW_VALUES else 'OFF'}")
 
-                elif event.key == pygame.K_p or event.key == pygame.K_SPACE:
+                elif event.key == pygame.K_p:
                     config.SHOW_POLICY = not config.SHOW_POLICY
                     print(f"Policy: {'ON' if config.SHOW_POLICY else 'OFF'}")
 
