@@ -127,6 +127,9 @@ class SearchApp:
             self.paused = False
             self.current_algorithm_key = key
 
+            # Update visualizer to show current algorithm
+            self.visualizer.set_algorithm(name)
+
             print(f"Maze size: {self.maze.width}x{self.maze.height}")
             print(f"Start: {self.maze.start}, Goal: {self.maze.goal}")
 
@@ -139,6 +142,10 @@ class SearchApp:
         self.search_generator = None
         self.current_algorithm_key = None
         self.algorithm_complete = False
+
+        # Reset algorithm display
+        self.visualizer.set_algorithm("None")
+
         print(f"Maze reset ({config.MAZE_WIDTH}x{config.MAZE_HEIGHT}, complexity={config.MAZE_COMPLEXITY:.2f})")
         print(f"Start: {self.maze.start}, Goal: {self.maze.goal}")
 

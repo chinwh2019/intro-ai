@@ -42,11 +42,12 @@ class SearchVisualizer:
         self.path: list = []
         self.solution_found = False
         self.stats: Dict = {}
+        self.current_algorithm_name: str = "None"  # Track current algorithm
 
-        # Interactive parameter panel
+        # Interactive parameter panel (positioned to avoid overlap with legend)
         self.parameter_panel = SearchParameterPanel(
             x=10,
-            y=config.WINDOW_HEIGHT - 350,
+            y=config.WINDOW_HEIGHT - 330,  # Moved down to avoid legend overlap
             width=config.SIDEBAR_WIDTH - 20,
             on_apply=on_parameter_change
         )
@@ -66,6 +67,10 @@ class SearchVisualizer:
         self.path = viz_state.get('path', [])
         self.solution_found = viz_state.get('solution_found', False)
         self.stats = viz_state.get('stats', {})
+
+    def set_algorithm(self, algorithm_name: str):
+        """Set the current algorithm name for display"""
+        self.current_algorithm_name = algorithm_name
 
     def render(self):
         """Render current state"""
@@ -177,8 +182,17 @@ class SearchVisualizer:
         title = self.font.render("Search Statistics", True, config.COLOR_TEXT)
         self.screen.blit(title, (10, 10))
 
+        # Current Algorithm indicator
+        y_offset = 40
+        algo_label = self.small_font.render("Algorithm:", True, config.COLOR_TEXT)
+        self.screen.blit(algo_label, (10, y_offset))
+
+        algo_name_color = config.COLOR_BUTTON_ACTIVE if self.current_algorithm_name != "None" else config.COLOR_TEXT
+        algo_name = self.font.render(self.current_algorithm_name, True, algo_name_color)
+        self.screen.blit(algo_name, (10, y_offset + 18))
+
         # Statistics
-        y_offset = 50
+        y_offset = 90  # More space for algorithm name
         stats_to_show = [
             ("Nodes Expanded", self.stats.get('nodes_expanded', 0)),
             ("Nodes Generated", self.stats.get('nodes_generated', 0)),
@@ -215,32 +229,39 @@ class SearchVisualizer:
         random_text = self.small_font.render(random_mode, True, random_color)
         self.screen.blit(random_text, (10, y_offset))
 
-        # Legend
-        y_offset += 60
+        # Legend - Compact 2-column layout
+        y_offset += 40
         legend_title = self.font.render("Legend:", True, config.COLOR_TEXT)
         self.screen.blit(legend_title, (10, y_offset))
-        y_offset += 30
+        y_offset += 25
 
-        legend_items = [
+        # Two columns to save space
+        legend_items_col1 = [
             ("Start", config.COLOR_START),
             ("Goal", config.COLOR_GOAL),
             ("Explored", config.COLOR_EXPLORED),
+        ]
+        legend_items_col2 = [
             ("Frontier", config.COLOR_FRONTIER),
             ("Path", config.COLOR_PATH),
             ("Current", config.COLOR_CURRENT),
         ]
 
-        for label, color in legend_items:
-            # Color box
-            pygame.draw.rect(
-                self.screen,
-                color,
-                (10, y_offset, 20, 20)
-            )
-            # Label
-            text = self.small_font.render(label, True, config.COLOR_TEXT)
-            self.screen.blit(text, (35, y_offset + 3))
-            y_offset += 25
+        # Draw column 1
+        legend_y = y_offset
+        for label, color in legend_items_col1:
+            pygame.draw.rect(self.screen, color, (10, legend_y, 15, 15))
+            text = self.tiny_font.render(label, True, config.COLOR_TEXT)
+            self.screen.blit(text, (28, legend_y + 2))
+            legend_y += 20
+
+        # Draw column 2
+        legend_y = y_offset
+        for label, color in legend_items_col2:
+            pygame.draw.rect(self.screen, color, (150, legend_y, 15, 15))
+            text = self.tiny_font.render(label, True, config.COLOR_TEXT)
+            self.screen.blit(text, (168, legend_y + 2))
+            legend_y += 20
 
         # Draw interactive parameter panel at bottom
         self.parameter_panel.draw(self.screen)
