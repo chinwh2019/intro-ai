@@ -1,4 +1,4 @@
-"""MDP Visualization"""
+"""MDP Visualization with enhanced features from original implementation"""
 
 import pygame
 import math
@@ -9,7 +9,7 @@ from modules.mdp.core.mdp import State
 
 
 class MDPVisualizer:
-    """Visualizer for MDP"""
+    """Enhanced visualizer for MDP with triangular Q-values and better colors"""
 
     def __init__(self, grid_world: GridWorld):
         pygame.init()
@@ -23,25 +23,18 @@ class MDPVisualizer:
         pygame.display.set_caption("MDP Visualization")
 
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.Font(None, 32)
+        self.font = pygame.font.Font(None, 24)
         self.small_font = pygame.font.Font(None, 20)
         self.tiny_font = pygame.font.Font(None, 16)
 
-        # Calculate cell size
-        available_width = config.WINDOW_WIDTH - config.SIDEBAR_WIDTH
-        available_height = config.WINDOW_HEIGHT - config.CONTROL_PANEL_HEIGHT
-        self.cell_size = min(
-            available_width // self.grid_size,
-            available_height // self.grid_size
-        )
+        # Calculate cell size to fit in main area
+        main_area_size = min(config.WINDOW_WIDTH - config.SIDEBAR_WIDTH,
+                            config.WINDOW_HEIGHT - config.CONTROL_PANEL_HEIGHT)
+        self.cell_size = main_area_size // self.grid_size
 
         # Grid offset for centering
-        self.grid_offset_x = config.SIDEBAR_WIDTH + (
-            available_width - self.cell_size * self.grid_size
-        ) // 2
-        self.grid_offset_y = config.CONTROL_PANEL_HEIGHT + (
-            available_height - self.cell_size * self.grid_size
-        ) // 2
+        self.grid_offset_x = config.SIDEBAR_WIDTH
+        self.grid_offset_y = config.CONTROL_PANEL_HEIGHT
 
         # Current state
         self.values: Dict[State, float] = {}
@@ -49,7 +42,6 @@ class MDPVisualizer:
         self.policy: Dict[State, str] = {}
         self.iteration = 0
         self.converged = False
-        self.agent_pos = grid_world.start_pos
 
     def update_state(self, solver_state: Dict):
         """Update visualization state"""
@@ -59,13 +51,13 @@ class MDPVisualizer:
         self.iteration = solver_state.get('iteration', 0)
         self.converged = solver_state.get('converged', False)
 
-    def render(self):
-        """Render MDP"""
+    def render(self, walker_pos: Optional[tuple] = None):
+        """Render MDP with optional walker position"""
         # Clear screen
         self.screen.fill(config.COLOR_BACKGROUND)
 
         # Render grid
-        self._render_grid()
+        self._render_grid(walker_pos)
 
         # Render sidebar
         self._render_sidebar()
@@ -77,209 +69,122 @@ class MDPVisualizer:
         pygame.display.flip()
         self.clock.tick(config.FPS)
 
-    def _render_grid(self):
-        """Render grid world"""
+    def _render_grid(self, walker_pos: Optional[tuple] = None):
+        """Render grid world with enhanced Q-value visualization"""
         for r in range(self.grid_size):
             for c in range(self.grid_size):
                 x = self.grid_offset_x + c * self.cell_size
                 y = self.grid_offset_y + r * self.cell_size
 
+                rect = pygame.Rect(x, y, self.cell_size, self.cell_size)
                 state = State((r, c))
 
-                # Determine cell type and color
+                # Draw based on cell type
                 if (r, c) in self.grid_world.obstacles:
-                    color = config.COLOR_OBSTACLE
-                    self._draw_cell(x, y, color)
+                    # Obstacle
+                    pygame.draw.rect(self.screen, config.COLOR_OBSTACLE, rect)
 
                 elif (r, c) == self.grid_world.goal_pos:
-                    color = config.COLOR_GOAL
-                    self._draw_cell(x, y, color)
-                    # Draw star or trophy icon
-                    self._draw_goal_icon(x, y)
+                    # Goal (treasure)
+                    pygame.draw.rect(self.screen, config.COLOR_GOAL, rect)
+                    if state in self.values:
+                        value_text = self.font.render(f"{self.values[state]:.2f}", True, (0, 0, 0))
+                        self.screen.blit(value_text, (rect.centerx - value_text.get_width() // 2,
+                                                      rect.centery - value_text.get_height() // 2))
 
                 elif (r, c) == self.grid_world.danger_pos:
-                    color = config.COLOR_DANGER
-                    self._draw_cell(x, y, color)
-                    # Draw danger icon
-                    self._draw_danger_icon(x, y)
+                    # Danger (trap)
+                    pygame.draw.rect(self.screen, config.COLOR_DANGER, rect)
+                    if state in self.values:
+                        value_text = self.font.render(f"{self.values[state]:.2f}", True, (255, 255, 255))
+                        self.screen.blit(value_text, (rect.centerx - value_text.get_width() // 2,
+                                                      rect.centery - value_text.get_height() // 2))
 
                 else:
-                    # Normal cell - color by value
-                    if config.SHOW_VALUES and state in self.values:
-                        value = self.values[state]
-                        color = self._value_to_color(value)
-                        self._draw_cell(x, y, color, alpha=150)
+                    # Normal cell
+                    if config.SHOW_Q_VALUES and state in self.policy:
+                        # Draw with triangular Q-value partitions
+                        self._draw_cell_with_triangles(rect, state)
                     else:
-                        self._draw_cell(x, y, (50, 50, 50), alpha=50)
+                        # Draw simple cell with value
+                        pygame.draw.rect(self.screen, (0, 100, 0), rect)  # DARK_GREEN
 
-                    # Draw value text
-                    if config.SHOW_VALUES and state in self.values:
-                        value = self.values[state]
-                        self._draw_value_text(x, y, value)
+                        if config.SHOW_VALUES and state in self.values:
+                            value = self.values[state]
+                            value_text = self.font.render(f"{value:.2f}", True, (255, 255, 255))
+                            self.screen.blit(value_text, (rect.centerx - value_text.get_width() // 2,
+                                                          rect.centery - value_text.get_height() // 2))
 
-                    # Draw policy arrow
+                    # Draw policy arrow on top
                     if config.SHOW_POLICY and state in self.policy:
-                        action = self.policy[state]
-                        self._draw_policy_arrow(x, y, action)
-
-                    # Draw Q-values in corners
-                    if config.SHOW_Q_VALUES:
-                        self._draw_q_values(x, y, state)
-
-                # Draw agent if at this position
-                if (r, c) == self.agent_pos:
-                    self._draw_agent(x, y)
+                        self._draw_policy_arrow(rect, self.policy[state])
 
                 # Draw grid lines
-                pygame.draw.rect(
-                    self.screen,
-                    config.COLOR_GRID_LINE,
-                    (x, y, self.cell_size, self.cell_size),
-                    2
-                )
+                pygame.draw.rect(self.screen, (255, 255, 255), rect, 1)
 
-    def _draw_cell(self, x: int, y: int, color: tuple, alpha: int = 255):
-        """Draw a colored cell"""
-        surface = pygame.Surface((self.cell_size, self.cell_size))
-        surface.set_alpha(alpha)
-        surface.fill(color)
-        self.screen.blit(surface, (x, y))
+                # Draw walker if at this position
+                if walker_pos and (r, c) == walker_pos:
+                    pygame.draw.circle(self.screen, (255, 165, 0), rect.center, self.cell_size // 3)
 
-    def _value_to_color(self, value: float) -> tuple:
-        """Convert value to color (heatmap)"""
-        if value > 0:
-            # Positive values: green
-            intensity = min(255, int(abs(value) * 255))
-            return (0, intensity, 0)
-        elif value < 0:
-            # Negative values: red
-            intensity = min(255, int(abs(value) * 255))
-            return (intensity, 0, 0)
-        else:
-            # Zero: gray
-            return (100, 100, 100)
+    def _draw_cell_with_triangles(self, rect: pygame.Rect, state: State):
+        """Draw cell divided into 4 triangles for Q-values"""
+        # Background
+        pygame.draw.rect(self.screen, (0, 100, 0), rect)
 
-    def _draw_value_text(self, x: int, y: int, value: float):
-        """Draw value as text"""
-        text = f"{value:.{config.VALUE_DECIMAL_PLACES}f}"
-        text_surface = self.small_font.render(text, True, config.COLOR_TEXT)
-        text_rect = text_surface.get_rect(
-            center=(x + self.cell_size // 2, y + self.cell_size // 2)
-        )
-        self.screen.blit(text_surface, text_rect)
+        # Triangle points for each action (up, right, down, left)
+        triangle_points = [
+            [(rect.left, rect.top), (rect.right, rect.top), (rect.centerx, rect.centery)],  # UP
+            [(rect.right, rect.top), (rect.right, rect.bottom), (rect.centerx, rect.centery)],  # RIGHT
+            [(rect.left, rect.bottom), (rect.right, rect.bottom), (rect.centerx, rect.centery)],  # DOWN
+            [(rect.left, rect.top), (rect.left, rect.bottom), (rect.centerx, rect.centery)]  # LEFT
+        ]
 
-    def _draw_policy_arrow(self, x: int, y: int, action: str):
+        # Action names matching triangle order
+        action_names = ['UP', 'RIGHT', 'DOWN', 'LEFT']
+
+        # Draw triangles and Q-values
+        for i, action in enumerate(action_names):
+            q_key = (state, action)
+            q_value = self.q_values.get(q_key, 0.0)
+
+            # Color based on Q-value sign
+            color = (255, 0, 0) if q_value < 0 else (0, 100, 0)  # RED or DARK_GREEN
+
+            # Draw triangle
+            pygame.draw.polygon(self.screen, color, triangle_points[i])
+            pygame.draw.lines(self.screen, (255, 255, 255), True, triangle_points[i], 1)
+
+            # Draw Q-value text
+            q_text = self.font.render(f"{q_value:.2f}", True, (255, 255, 255))
+
+            # Position text in triangle
+            if action == 'UP':
+                text_pos = (rect.centerx - q_text.get_width() // 2, rect.top + 5)
+            elif action == 'RIGHT':
+                text_pos = (rect.right - q_text.get_width() - 5, rect.centery - q_text.get_height() // 2)
+            elif action == 'DOWN':
+                text_pos = (rect.centerx - q_text.get_width() // 2, rect.bottom - q_text.get_height() - 5)
+            else:  # LEFT
+                text_pos = (rect.left + 5, rect.centery - q_text.get_height() // 2)
+
+            self.screen.blit(q_text, text_pos)
+
+    def _draw_policy_arrow(self, rect: pygame.Rect, action: str):
         """Draw policy arrow"""
-        center_x = x + self.cell_size // 2
-        center_y = y + self.cell_size // 2
+        center_x = rect.centerx
+        center_y = rect.centery
         arrow_length = self.cell_size // 3
 
-        # Direction vectors
-        directions = {
-            "UP": (0, -arrow_length),
-            "DOWN": (0, arrow_length),
-            "LEFT": (-arrow_length, 0),
-            "RIGHT": (arrow_length, 0),
+        # Arrow points based on action
+        arrow_points = {
+            'UP': [(center_x, rect.top + 5), (center_x - 5, rect.top + 15), (center_x + 5, rect.top + 15)],
+            'DOWN': [(center_x, rect.bottom - 5), (center_x - 5, rect.bottom - 15), (center_x + 5, rect.bottom - 15)],
+            'LEFT': [(rect.left + 5, center_y), (rect.left + 15, center_y - 5), (rect.left + 15, center_y + 5)],
+            'RIGHT': [(rect.right - 5, center_y), (rect.right - 15, center_y - 5), (rect.right - 15, center_y + 5)]
         }
 
-        if action in directions:
-            dx, dy = directions[action]
-            end_x = center_x + dx
-            end_y = center_y + dy
-
-            # Draw arrow line
-            pygame.draw.line(
-                self.screen,
-                config.COLOR_ARROW,
-                (center_x, center_y),
-                (end_x, end_y),
-                4
-            )
-
-            # Draw arrowhead
-            arrow_size = 8
-            angle = math.atan2(dy, dx)
-
-            point1_x = end_x - arrow_size * math.cos(angle - math.pi / 6)
-            point1_y = end_y - arrow_size * math.sin(angle - math.pi / 6)
-            point2_x = end_x - arrow_size * math.cos(angle + math.pi / 6)
-            point2_y = end_y - arrow_size * math.sin(angle + math.pi / 6)
-
-            pygame.draw.polygon(
-                self.screen,
-                config.COLOR_ARROW,
-                [(end_x, end_y), (point1_x, point1_y), (point2_x, point2_y)]
-            )
-
-    def _draw_q_values(self, x: int, y: int, state: State):
-        """Draw Q-values in cell corners"""
-        # Q-value positions (top, right, bottom, left)
-        positions = {
-            "UP": (x + self.cell_size // 2, y + 10),
-            "RIGHT": (x + self.cell_size - 25, y + self.cell_size // 2),
-            "DOWN": (x + self.cell_size // 2, y + self.cell_size - 10),
-            "LEFT": (x + 15, y + self.cell_size // 2),
-        }
-
-        for action, pos in positions.items():
-            q_value = self.q_values.get((state, action), 0.0)
-            text = f"{q_value:.1f}"
-            text_surface = self.tiny_font.render(text, True, (200, 200, 200))
-            text_rect = text_surface.get_rect(center=pos)
-            self.screen.blit(text_surface, text_rect)
-
-    def _draw_goal_icon(self, x: int, y: int):
-        """Draw goal icon (star)"""
-        center_x = x + self.cell_size // 2
-        center_y = y + self.cell_size // 2
-        radius = self.cell_size // 4
-
-        # Draw simple circle for now (could be star)
-        pygame.draw.circle(
-            self.screen,
-            (255, 255, 255),
-            (center_x, center_y),
-            radius,
-            3
-        )
-
-    def _draw_danger_icon(self, x: int, y: int):
-        """Draw danger icon (X)"""
-        padding = self.cell_size // 4
-        pygame.draw.line(
-            self.screen,
-            (255, 255, 255),
-            (x + padding, y + padding),
-            (x + self.cell_size - padding, y + self.cell_size - padding),
-            4
-        )
-        pygame.draw.line(
-            self.screen,
-            (255, 255, 255),
-            (x + self.cell_size - padding, y + padding),
-            (x + padding, y + self.cell_size - padding),
-            4
-        )
-
-    def _draw_agent(self, x: int, y: int):
-        """Draw agent"""
-        center_x = x + self.cell_size // 2
-        center_y = y + self.cell_size // 2
-        radius = self.cell_size // 4
-
-        pygame.draw.circle(
-            self.screen,
-            config.COLOR_AGENT,
-            (center_x, center_y),
-            radius
-        )
-        pygame.draw.circle(
-            self.screen,
-            (255, 255, 255),
-            (center_x, center_y),
-            radius,
-            2
-        )
+        if action in arrow_points:
+            pygame.draw.polygon(self.screen, (255, 255, 255), arrow_points[action])
 
     def _render_sidebar(self):
         """Render sidebar with info"""
@@ -329,7 +234,7 @@ class MDPVisualizer:
             ("Goal (Reward: +1)", config.COLOR_GOAL),
             ("Danger (Reward: -1)", config.COLOR_DANGER),
             ("Obstacle", config.COLOR_OBSTACLE),
-            ("Agent", config.COLOR_AGENT),
+            ("Walker", (255, 165, 0)),
         ]
 
         for label, color in legend_items:
@@ -351,13 +256,49 @@ class MDPVisualizer:
              config.CONTROL_PANEL_HEIGHT)
         )
 
-        # Instructions
-        instructions = [
-            "SPACE: Start/Pause | S: Step | R: Reset | V: Toggle Values | P: Toggle Policy | Q: Toggle Q-values"
-        ]
+        # Instructions (split into two lines for clarity)
+        instructions_line1 = self.tiny_font.render(
+            "SPACE: Start/Pause | S: Step | R: Reset | V: Toggle Values | P: Toggle Policy",
+            True,
+            config.COLOR_TEXT
+        )
+        instructions_line2 = self.tiny_font.render(
+            "Q: Toggle Q-Values | L: Show Learning | D: Policy Demo | Arrow Keys: Manual Control",
+            True,
+            config.COLOR_TEXT
+        )
 
-        y_offset = 15
-        for instruction in instructions:
-            text = self.tiny_font.render(instruction, True, config.COLOR_TEXT)
-            self.screen.blit(text, (config.SIDEBAR_WIDTH + 10, y_offset))
-            y_offset += 20
+        self.screen.blit(
+            instructions_line1,
+            (config.SIDEBAR_WIDTH + 10, config.CONTROL_PANEL_HEIGHT // 2 - 20)
+        )
+        self.screen.blit(
+            instructions_line2,
+            (config.SIDEBAR_WIDTH + 10, config.CONTROL_PANEL_HEIGHT // 2 + 5)
+        )
+
+    def draw_buttons(self, buttons: dict, button_states: dict):
+        """Draw interactive buttons at bottom"""
+        for button_name, button_rect in buttons.items():
+            # Button color (highlight if active)
+            color = (150, 200, 150) if button_states.get(button_name, False) else (200, 200, 200)
+            pygame.draw.rect(self.screen, color, button_rect)
+            pygame.draw.rect(self.screen, (0, 0, 0), button_rect, 2)
+
+            # Button text
+            button_texts = {
+                'policy': "Toggle Policy",
+                'q_values': "Toggle Q-Values",
+                'learning': "Show Learning",
+                'manual': "Manual Learning",
+                'demo': "Policy Demo"
+            }
+
+            text = self.font.render(button_texts.get(button_name, button_name), True, (0, 0, 0))
+            self.screen.blit(text, (button_rect.x + 10, button_rect.y + 5))
+
+    def draw_status_message(self, message: str, y_pos: int):
+        """Draw status message"""
+        if message:
+            text = self.font.render(message, True, (255, 0, 0))
+            self.screen.blit(text, (10, y_pos))
