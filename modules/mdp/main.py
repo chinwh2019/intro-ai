@@ -60,9 +60,9 @@ class MDPApp:
         self.current_iteration = 0
         self.walker_pos = self.grid_world.start_pos
 
-        # Manual learning: separate V and Q for student exploration
-        self.learned_V = {}
-        self.learned_Q = {}
+        # Manual learning: separate V and Q for student exploration (created when needed)
+        self.learned_V = None  # Only initialized in manual learning mode
+        self.learned_Q = None  # Only initialized in manual learning mode
         self.episode_count = 0
 
         # Terminal state message
@@ -247,7 +247,11 @@ class MDPApp:
         self._update_learned_display()
 
     def _update_learned_display(self):
-        """Update visualizer to show learned values"""
+        """Update visualizer to show learned values (only in manual learning mode)"""
+        # Safety check - only update if in manual learning mode
+        if not self.manual_learning_mode or self.learned_Q is None:
+            return
+
         # Convert learned_Q to format expected by visualizer
         q_values_display = {}
         for state, actions in self.learned_Q.items():
@@ -256,7 +260,7 @@ class MDPApp:
 
         # Update visualizer
         display_state = {
-            'values': self.learned_V.copy(),
+            'values': self.learned_V.copy() if self.learned_V else {},
             'q_values': q_values_display,
             'policy': {},  # No policy during learning
             'iteration': self.episode_count,
@@ -404,31 +408,37 @@ class MDPApp:
                                     config.DISCOUNT,
                                     config.LEARNING_RATE
                                 )
-                                print(f"Moved {action} to {next_pos} | V({current_state.position})={self.learned_V[current_state]:.2f}")
+                                print(f"[LEARNING] Moved {action} to {next_pos} | V({current_state.position})={self.learned_V[current_state]:.2f}")
                             else:
-                                print(f"Moved {action} to {next_pos}")
+                                print(f"[OBSERVATION] Moved {action} to {next_pos} (no learning - values frozen)")
 
                             self.walker_pos = next_pos
 
-                            # Check terminal and update display AFTER terminal handling
+                            # Check terminal - only update if in manual learning mode
                             if self.walker_pos == self.grid_world.goal_pos:
-                                print("Reached goal!")
-                                self.episode_count += 1
                                 if self.manual_learning_mode:
+                                    print("Reached goal!")
+                                    self.episode_count += 1
                                     print(f"Episode {self.episode_count} complete - Q-values updated!")
                                     # Update display one more time to show terminal reward learning
                                     self._update_learned_display()
+                                else:
+                                    print("Reached goal! (observation mode - no learning)")
                                 self.walker_pos = self.grid_world.start_pos
+
                             elif self.walker_pos == self.grid_world.danger_pos:
-                                print("Hit danger!")
-                                self.episode_count += 1
                                 if self.manual_learning_mode:
+                                    print("Hit danger!")
+                                    self.episode_count += 1
                                     print(f"Episode {self.episode_count} complete - Q-values updated!")
                                     # Update display to show penalty learning
                                     self._update_learned_display()
+                                else:
+                                    print("Hit danger! (observation mode - no learning)")
                                 self.walker_pos = self.grid_world.start_pos
+
                             elif self.manual_learning_mode:
-                                # Update display for non-terminal moves
+                                # Update display for non-terminal moves (only in manual mode)
                                 self._update_learned_display()
 
     def update(self):
@@ -458,13 +468,16 @@ class MDPApp:
 
         # Draw mode indicator
         if self.manual_learning_mode:
-            mode = f"Manual Learning (Episode {self.episode_count})"
+            mode = f"Manual Learning (Episode {self.episode_count}) - Values UPDATE as you move!"
             mode_color = (80, 250, 123)  # Green
         elif self.policy_demo_mode:
-            mode = "Policy Demo (Optimal)"
+            mode = "Policy Demo (Optimal Policy) - Agent auto-follows"
             mode_color = (139, 233, 253)  # Cyan
+        elif self.show_learning_process:
+            mode = f"Learning Animation (Iteration {self.visualizer.iteration}/{len(self.iterations)})"
+            mode_color = (255, 184, 108)  # Orange
         else:
-            mode = "Observation Mode"
+            mode = "Observation Mode - Values FROZEN (no learning)"
             mode_color = config.COLOR_TEXT
 
         mode_text = self.visualizer.small_font.render(
