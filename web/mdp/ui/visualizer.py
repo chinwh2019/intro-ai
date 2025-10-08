@@ -2,16 +2,17 @@
 
 import pygame
 import math
-from typing import Dict, Optional
+from typing import Dict, Optional, Callable
 from config import config
 from environments.grid_world import GridWorld
 from core.mdp import State
+from ui.controls import ParameterPanel
 
 
 class MDPVisualizer:
     """Enhanced visualizer for MDP with triangular Q-values and better colors"""
 
-    def __init__(self, grid_world: GridWorld):
+    def __init__(self, grid_world: GridWorld, on_parameter_change: Callable = None):
         pygame.init()
 
         self.grid_world = grid_world
@@ -42,6 +43,21 @@ class MDPVisualizer:
         self.policy: Dict[State, str] = {}
         self.iteration = 0
         self.converged = False
+
+        # Interactive parameter panel
+        self.parameter_panel = ParameterPanel(
+            x=10,
+            y=config.WINDOW_HEIGHT - 350,
+            width=config.SIDEBAR_WIDTH - 20,
+            on_apply=on_parameter_change
+        )
+
+        # Set initial parameter values from config
+        self.parameter_panel.set_parameters(
+            discount=config.DISCOUNT,
+            noise=config.NOISE,
+            living_reward=config.LIVING_REWARD
+        )
 
     def update_state(self, solver_state: Dict):
         """Update visualization state"""
@@ -248,6 +264,9 @@ class MDPVisualizer:
             self.screen.blit(text, (35, y_offset + 3))
             y_offset += 25
 
+        # Draw parameter panel at bottom
+        self.parameter_panel.draw(self.screen)
+
     def _render_control_panel(self):
         """Render control panel"""
         # Background
@@ -305,3 +324,7 @@ class MDPVisualizer:
         if message:
             text = self.font.render(message, True, (255, 0, 0))
             self.screen.blit(text, (10, y_pos))
+
+    def handle_parameter_event(self, event: pygame.event.Event):
+        """Pass event to parameter panel"""
+        self.parameter_panel.handle_event(event)

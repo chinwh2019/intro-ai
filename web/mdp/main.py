@@ -42,8 +42,8 @@ class MDPApp:
             living_reward=config.config.LIVING_REWARD
         )
 
-        # Create visualizer
-        self.visualizer = MDPVisualizer(self.grid_world)
+        # Create visualizer with parameter change callback
+        self.visualizer = MDPVisualizer(self.grid_world, on_parameter_change=self.on_parameter_change)
 
         # Create solver and run value iteration
         mdp = self.grid_world.get_mdp()
@@ -96,6 +96,64 @@ class MDPApp:
         print("Converged in", self.solver.iteration_count, "iterations")
         print("Press V/P/Q to toggle displays")
         print("Press L for learning, D for demo, M for manual learning")
+
+    def on_parameter_change(self, params: dict):
+        """Handle parameter change from sliders"""
+        print("\n🔄 Applying new parameters...")
+        print(f"  Discount: {params['discount']:.2f}")
+        print(f"  Noise: {params['noise']:.2f}")
+        print(f"  Living reward: {params['living_reward']:.3f}")
+
+        # Update config
+        config.config.DISCOUNT = params['discount']
+        config.config.NOISE = params['noise']
+        config.config.LIVING_REWARD = params['living_reward']
+
+        # Re-solve MDP
+        self._resolve_mdp()
+
+    def _resolve_mdp(self):
+        """Re-solve MDP with new parameters"""
+        # Keep same layout, rebuild with new parameters
+        mdp = GridWorld(
+            grid_size=self.grid_world.grid_size,
+            num_obstacles=len(self.grid_world.obstacles),
+            noise=config.config.NOISE,
+            discount=config.config.DISCOUNT,
+            living_reward=config.config.LIVING_REWARD
+        )
+
+        mdp.goal_pos = self.grid_world.goal_pos
+        mdp.danger_pos = self.grid_world.danger_pos
+        mdp.start_pos = self.grid_world.start_pos
+        mdp.obstacles = self.grid_world.obstacles.copy()
+        mdp.mdp = mdp._build_mdp()
+
+        self.grid_world = mdp
+
+        # Re-solve
+        self.solver = ValueIteration(mdp.get_mdp(), epsilon=config.config.VALUE_ITERATION_EPSILON)
+
+        self.iterations = []
+        for state in self.solver.iterate():
+            self.iterations.append(state)
+
+        initial_state = {
+            'values': {s: self.solver.values[s] if self.solver.mdp.is_terminal(s) else 0.0
+                      for s in self.solver.mdp.states},
+            'q_values': {},
+            'policy': {},
+            'iteration': 0,
+            'converged': False,
+        }
+        self.visualizer.update_state(initial_state)
+
+        # Update sliders
+        self.visualizer.parameter_panel.set_parameters(
+            discount=config.config.DISCOUNT,
+            noise=config.config.NOISE,
+            living_reward=config.config.LIVING_REWARD
+        )
 
     def reset(self):
         """Reset environment"""
@@ -243,6 +301,9 @@ class MDPApp:
     def handle_events(self):
         """Handle events"""
         for event in pygame.event.get():
+            # Pass event to parameter panel first
+            self.visualizer.handle_parameter_event(event)
+
             if event.type == pygame.QUIT:
                 self.running = False
 

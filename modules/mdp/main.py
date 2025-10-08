@@ -25,8 +25,8 @@ class MDPApp:
             living_reward=config.LIVING_REWARD
         )
 
-        # Create visualizer
-        self.visualizer = MDPVisualizer(self.grid_world)
+        # Create visualizer with parameter change callback
+        self.visualizer = MDPVisualizer(self.grid_world, on_parameter_change=self.on_parameter_change)
 
         # Create solver and run value iteration to get policy
         mdp = self.grid_world.get_mdp()
@@ -90,6 +90,84 @@ class MDPApp:
         print("  D: Policy demo | M: Manual learning | R: Reset | Arrow Keys: Move agent")
         print("=" * 60)
 
+    def on_parameter_change(self, params: dict):
+        """Handle parameter change from sliders - re-solve MDP"""
+        print("\n" + "=" * 60)
+        print("🔄 Applying new parameters...")
+        print(f"  Discount (γ): {params['discount']:.2f}")
+        print(f"  Noise: {params['noise']:.2f}")
+        print(f"  Living Reward: {params['living_reward']:.3f}")
+
+        # Update config
+        config.DISCOUNT = params['discount']
+        config.NOISE = params['noise']
+        config.LIVING_REWARD = params['living_reward']
+
+        # Disable active modes
+        self.show_learning_process = False
+        self.policy_demo_mode = False
+        self.manual_learning_mode = False
+        self.learning_paused = False
+
+        # Re-solve with new parameters
+        self._resolve_mdp()
+
+        print("✓ MDP re-solved with new parameters!")
+        print(f"  Converged in {self.solver.iteration_count} iterations")
+        print("=" * 60)
+
+    def _resolve_mdp(self):
+        """Re-solve MDP with current parameters (keep same grid layout)"""
+        # Rebuild MDP with new parameters but same layout
+        mdp = GridWorld(
+            grid_size=self.grid_world.grid_size,
+            num_obstacles=len(self.grid_world.obstacles),
+            noise=config.NOISE,
+            discount=config.DISCOUNT,
+            living_reward=config.LIVING_REWARD
+        )
+
+        # Manually set the same positions (keep layout)
+        mdp.goal_pos = self.grid_world.goal_pos
+        mdp.danger_pos = self.grid_world.danger_pos
+        mdp.start_pos = self.grid_world.start_pos
+        mdp.obstacles = self.grid_world.obstacles.copy()
+
+        # Rebuild MDP structure with new parameters
+        mdp.mdp = mdp._build_mdp()
+
+        # Update reference
+        self.grid_world = mdp
+
+        # Re-run value iteration
+        self.solver = ValueIteration(mdp.get_mdp(), epsilon=config.VALUE_ITERATION_EPSILON)
+
+        self.iterations = []
+        for state in self.solver.iterate():
+            self.iterations.append(state)
+
+        # Show initial state
+        initial_state = {
+            'values': {s: self.solver.values[s] if self.solver.mdp.is_terminal(s) else 0.0
+                      for s in self.solver.mdp.states},
+            'q_values': {(s, a): self.solver.values[s] if self.solver.mdp.is_terminal(s) else 0.0
+                        for s in self.solver.mdp.states for a in self.solver.mdp.actions},
+            'policy': {},
+            'iteration': 0,
+            'converged': False,
+        }
+        self.visualizer.update_state(initial_state)
+
+        # Update parameter panel to show new values
+        self.visualizer.parameter_panel.set_parameters(
+            discount=config.DISCOUNT,
+            noise=config.NOISE,
+            living_reward=config.LIVING_REWARD
+        )
+
+        self.walker_pos = self.grid_world.start_pos
+        self.current_iteration = 0
+
     def reset(self):
         """Reset environment and solver"""
         print("\nResetting environment...")
@@ -100,7 +178,7 @@ class MDPApp:
             discount=config.DISCOUNT,
             living_reward=config.LIVING_REWARD
         )
-        self.visualizer = MDPVisualizer(self.grid_world)
+        self.visualizer = MDPVisualizer(self.grid_world, on_parameter_change=self.on_parameter_change)
 
         # Rerun value iteration
         mdp = self.grid_world.get_mdp()
@@ -327,6 +405,9 @@ class MDPApp:
     def handle_events(self):
         """Handle events"""
         for event in pygame.event.get():
+            # First, pass event to parameter panel (for slider/button handling)
+            self.visualizer.handle_parameter_event(event)
+
             if event.type == pygame.QUIT:
                 self.running = False
 
