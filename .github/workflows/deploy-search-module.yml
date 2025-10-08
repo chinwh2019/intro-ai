@@ -35,6 +35,12 @@ jobs:
         pygbag --build main.py
         echo "✓ Build complete"
 
+    - name: 🔧 Enable Autorun
+      run: |
+        cd web/search/build/web
+        sed -i 's/autorun : 0/autorun : 1/g' index.html
+        echo "✓ Autorun enabled"
+
     - name: 🚀 Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
