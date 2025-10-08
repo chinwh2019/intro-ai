@@ -69,10 +69,15 @@ if pygbag --build main.py 2>&1 | grep -i "error\|traceback" && [ ${PIPESTATUS[0]
     exit 1
 fi
 
+# CRITICAL FIX: Enable autorun in generated HTML
+echo "   Enabling autorun in generated HTML..."
+sed -i.bak 's/autorun : 0/autorun : 1/g' build/web/index.html
+rm -f build/web/index.html.bak
+
 cd "$PROJECT_ROOT"
 
 echo ""
-echo "   ✓ Build successful"
+echo "   ✓ Build successful (autorun enabled)"
 echo ""
 
 # Step 4: Verify build output

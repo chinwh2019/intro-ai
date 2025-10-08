@@ -11,6 +11,11 @@ Controls:
   Q: Quit
 """
 
+# /// script
+# [pygbag]
+# autorun = true
+# ///
+
 import asyncio
 import pygame
 import sys
@@ -56,7 +61,7 @@ class SearchApp:
 
         # For web: time-based stepping (more consistent across devices)
         self.last_step_time = 0
-        self.step_interval = config.STEP_DELAY / config.ANIMATION_SPEED
+        self.step_interval = config.config.STEP_DELAY / config.config.ANIMATION_SPEED
 
         print("Search Algorithms - Web Version")
         print("=" * 50)
