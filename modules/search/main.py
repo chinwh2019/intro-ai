@@ -21,7 +21,7 @@ class SearchApp:
 
     def __init__(self):
         self.maze = self._create_maze()
-        self.visualizer = SearchVisualizer(self.maze)
+        self.visualizer = SearchVisualizer(self.maze, on_parameter_change=self.on_parameter_change)
 
         # Available algorithms
         self.algorithms = {
@@ -35,6 +35,10 @@ class SearchApp:
         # Current algorithm
         self.current_algorithm: Optional[SearchAlgorithm] = None
         self.search_generator = None
+        self.current_algorithm_key = None  # Track which algorithm is running
+
+        # Interactive parameters
+        self.heuristic_weight = 1.0  # Current heuristic weight for A*/Greedy
 
         # Control state
         self.running = True
@@ -66,17 +70,62 @@ class SearchApp:
             random_start_goal=config.RANDOM_START_GOAL
         )
 
+    def on_parameter_change(self, params: dict):
+        """Handle parameter changes from sliders"""
+        try:
+            print("\n" + "=" * 50)
+            print("🔄 Applying parameters...")
+            print(f"  Speed: {params['speed']:.1f}x")
+            print(f"  Heuristic weight: {params['heuristic_weight']:.2f}")
+            print(f"  Complexity: {params['complexity']:.2f}")
+
+            # Apply speed immediately (affects current search)
+            config.ANIMATION_SPEED = params['speed']
+
+            # Store heuristic weight (applies to next algorithm start)
+            self.heuristic_weight = params['heuristic_weight']
+
+            # Store complexity (applies on next reset)
+            config.MAZE_COMPLEXITY = params['complexity']
+
+            # If A* or Greedy is running, restart with new weight
+            if self.current_algorithm_key in ['4', '5'] and not self.algorithm_complete:
+                print(f"  Restarting {self.algorithms[self.current_algorithm_key][0]} with new weight...")
+                self.select_algorithm(self.current_algorithm_key)
+
+            print("✓ Parameters applied!")
+            print("=" * 50)
+        except Exception as e:
+            print(f"❌ Error: {e}")
+            import traceback
+            traceback.print_exc()
+
     def select_algorithm(self, key: str):
         """Select and start algorithm"""
         if key in self.algorithms:
             name, algo_class = self.algorithms[key]
             print(f"\nStarting {name}...")
 
-            # Create new algorithm instance
-            self.current_algorithm = algo_class(self.maze)
+            # Create new algorithm instance with heuristic weight for A*/Greedy
+            if key in ['4', '5']:  # A* or Greedy
+                # Create custom heuristic with weight
+                def weighted_heuristic(pos1, pos2):
+                    manhattan = abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+                    return self.heuristic_weight * manhattan
+
+                self.current_algorithm = algo_class(self.maze, heuristic_func=weighted_heuristic)
+                print(f"  Using heuristic weight: {self.heuristic_weight:.2f}")
+                if self.heuristic_weight > 1.0:
+                    print(f"  ⚠ Inadmissible - may not find optimal solution")
+                elif self.heuristic_weight == 1.0:
+                    print(f"  ✓ Admissible - optimal solution guaranteed")
+            else:
+                self.current_algorithm = algo_class(self.maze)
+
             self.search_generator = self.current_algorithm.search()
             self.algorithm_complete = False
             self.paused = False
+            self.current_algorithm_key = key
 
             print(f"Maze size: {self.maze.width}x{self.maze.height}")
             print(f"Start: {self.maze.start}, Goal: {self.maze.goal}")
@@ -85,11 +134,12 @@ class SearchApp:
         """Reset maze and algorithm"""
         print("\nGenerating new maze...")
         self.maze = self._create_maze()
-        self.visualizer = SearchVisualizer(self.maze)
+        self.visualizer = SearchVisualizer(self.maze, on_parameter_change=self.on_parameter_change)
         self.current_algorithm = None
         self.search_generator = None
+        self.current_algorithm_key = None
         self.algorithm_complete = False
-        print(f"Maze reset ({config.MAZE_WIDTH}x{config.MAZE_HEIGHT}). Select an algorithm to start.")
+        print(f"Maze reset ({config.MAZE_WIDTH}x{config.MAZE_HEIGHT}, complexity={config.MAZE_COMPLEXITY:.2f})")
         print(f"Start: {self.maze.start}, Goal: {self.maze.goal}")
 
     def step_algorithm(self):
@@ -114,6 +164,9 @@ class SearchApp:
     def handle_events(self):
         """Handle pygame events"""
         for event in pygame.event.get():
+            # Pass event to parameter panel first (for slider/button handling)
+            self.visualizer.handle_parameter_event(event)
+
             if event.type == pygame.QUIT:
                 self.running = False
 

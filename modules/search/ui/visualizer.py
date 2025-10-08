@@ -3,15 +3,16 @@ Visualization system for search algorithms
 """
 
 import pygame
-from typing import Optional, Dict, Set
+from typing import Optional, Dict, Set, Callable
 from modules.search.config import config
 from modules.search.core.environment import Maze
 from modules.search.core.state import State
+from modules.search.ui.controls import SearchParameterPanel
 
 class SearchVisualizer:
     """Visualizer for search algorithms"""
 
-    def __init__(self, maze: Maze):
+    def __init__(self, maze: Maze, on_parameter_change: Callable = None):
         pygame.init()
 
         self.maze = maze
@@ -41,6 +42,21 @@ class SearchVisualizer:
         self.path: list = []
         self.solution_found = False
         self.stats: Dict = {}
+
+        # Interactive parameter panel
+        self.parameter_panel = SearchParameterPanel(
+            x=10,
+            y=config.WINDOW_HEIGHT - 350,
+            width=config.SIDEBAR_WIDTH - 20,
+            on_apply=on_parameter_change
+        )
+
+        # Set initial values from config
+        self.parameter_panel.set_parameters(
+            speed=config.ANIMATION_SPEED,
+            heuristic_weight=1.0,  # Default
+            complexity=config.MAZE_COMPLEXITY
+        )
 
     def update_state(self, viz_state: Dict):
         """Update visualization state"""
@@ -225,6 +241,13 @@ class SearchVisualizer:
             text = self.small_font.render(label, True, config.COLOR_TEXT)
             self.screen.blit(text, (35, y_offset + 3))
             y_offset += 25
+
+        # Draw interactive parameter panel at bottom
+        self.parameter_panel.draw(self.screen)
+
+    def handle_parameter_event(self, event: pygame.event.Event):
+        """Pass event to parameter panel"""
+        self.parameter_panel.handle_event(event)
 
     def _render_control_panel(self):
         """Render top control panel"""
