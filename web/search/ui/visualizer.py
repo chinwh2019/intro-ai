@@ -192,8 +192,58 @@ class SearchVisualizer:
         algo_name = self.font.render(self.current_algorithm_name, True, algo_name_color)
         self.screen.blit(algo_name, (10, y_offset + 18))
 
-        # Statistics
-        y_offset = 90  # More space for algorithm name
+        # Algorithm selection guide - show key mappings
+        y_offset = 75
+        keys_title = self.tiny_font.render("Select Algorithm:", True, (180, 180, 180))
+        self.screen.blit(keys_title, (10, y_offset))
+        y_offset += 16
+
+        key_mappings = [
+            "1: BFS      2: DFS",
+            "3: UCS      4: A*",
+            "5: Greedy"
+        ]
+        for mapping in key_mappings:
+            keys_text = self.tiny_font.render(mapping, True, (150, 150, 150))
+            self.screen.blit(keys_text, (10, y_offset))
+            y_offset += 14
+
+        # Legend - Moved to TOP after title (compact 2-column)
+        y_offset += 10
+        legend_title = self.small_font.render("Legend:", True, config.COLOR_TEXT)
+        self.screen.blit(legend_title, (10, y_offset))
+        y_offset += 20
+
+        # Two columns to save space
+        legend_items_col1 = [
+            ("Start", config.COLOR_START),
+            ("Goal", config.COLOR_GOAL),
+            ("Explored", config.COLOR_EXPLORED),
+        ]
+        legend_items_col2 = [
+            ("Frontier", config.COLOR_FRONTIER),
+            ("Path", config.COLOR_PATH),
+            ("Current", config.COLOR_CURRENT),
+        ]
+
+        # Draw column 1
+        legend_y = y_offset
+        for label, color in legend_items_col1:
+            pygame.draw.rect(self.screen, color, (10, legend_y, 12, 12))
+            text = self.tiny_font.render(label, True, config.COLOR_TEXT)
+            self.screen.blit(text, (25, legend_y + 1))
+            legend_y += 16
+
+        # Draw column 2
+        legend_y = y_offset
+        for label, color in legend_items_col2:
+            pygame.draw.rect(self.screen, color, (140, legend_y, 12, 12))
+            text = self.tiny_font.render(label, True, config.COLOR_TEXT)
+            self.screen.blit(text, (155, legend_y + 1))
+            legend_y += 16
+
+        # Statistics - AFTER legend
+        y_offset = 215  # Fixed position after legend
         stats_to_show = [
             ("Nodes Expanded", self.stats.get('nodes_expanded', 0)),
             ("Nodes Generated", self.stats.get('nodes_generated', 0)),
@@ -230,41 +280,7 @@ class SearchVisualizer:
         random_text = self.small_font.render(random_mode, True, random_color)
         self.screen.blit(random_text, (10, y_offset))
 
-        # Legend - Compact 2-column layout
-        y_offset += 40
-        legend_title = self.font.render("Legend:", True, config.COLOR_TEXT)
-        self.screen.blit(legend_title, (10, y_offset))
-        y_offset += 25
-
-        # Two columns to save space
-        legend_items_col1 = [
-            ("Start", config.COLOR_START),
-            ("Goal", config.COLOR_GOAL),
-            ("Explored", config.COLOR_EXPLORED),
-        ]
-        legend_items_col2 = [
-            ("Frontier", config.COLOR_FRONTIER),
-            ("Path", config.COLOR_PATH),
-            ("Current", config.COLOR_CURRENT),
-        ]
-
-        # Draw column 1
-        legend_y = y_offset
-        for label, color in legend_items_col1:
-            pygame.draw.rect(self.screen, color, (10, legend_y, 15, 15))
-            text = self.tiny_font.render(label, True, config.COLOR_TEXT)
-            self.screen.blit(text, (28, legend_y + 2))
-            legend_y += 20
-
-        # Draw column 2
-        legend_y = y_offset
-        for label, color in legend_items_col2:
-            pygame.draw.rect(self.screen, color, (150, legend_y, 15, 15))
-            text = self.tiny_font.render(label, True, config.COLOR_TEXT)
-            self.screen.blit(text, (168, legend_y + 2))
-            legend_y += 20
-
-        # Draw interactive parameter panel at bottom
+        # Draw interactive parameter panel at bottom (legend already at top)
         self.parameter_panel.draw(self.screen)
 
     def handle_parameter_event(self, event: pygame.event.Event):
