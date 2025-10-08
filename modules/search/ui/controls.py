@@ -414,10 +414,10 @@ class SearchParameterPanel:
         slider_width = width - 80
         slider_x = x + 10
 
-        # Slider 1: Animation Speed (0.1x to 10x)
+        # Slider 1: Animation Speed (0.1x to 10x) - more compact spacing
         self.speed_slider = Slider(
             x=slider_x,
-            y=y + 50,
+            y=y + 40,  # Closer to title
             width=slider_width,
             min_val=0.1,
             max_val=10.0,
@@ -428,7 +428,7 @@ class SearchParameterPanel:
         # Slider 2: Heuristic Weight (0.5 to 3.0) - for A*
         self.heuristic_weight_slider = Slider(
             x=slider_x,
-            y=y + 120,
+            y=y + 100,  # Tighter spacing
             width=slider_width,
             min_val=0.5,
             max_val=3.0,
@@ -439,7 +439,7 @@ class SearchParameterPanel:
         # Slider 3: Maze Complexity (0.0 to 1.0)
         self.complexity_slider = Slider(
             x=slider_x,
-            y=y + 190,
+            y=y + 160,  # Tighter spacing
             width=slider_width,
             min_val=0.0,
             max_val=1.0,
@@ -448,7 +448,7 @@ class SearchParameterPanel:
         )
 
         # Create buttons
-        button_y = y + 260
+        button_y = y + 220  # Tighter spacing
         button_width = (width - 30) // 2
 
         self.apply_button = Button(
@@ -538,8 +538,8 @@ class SearchParameterPanel:
 
     def draw(self, surface: pygame.Surface):
         """Draw the parameter panel"""
-        # Panel background
-        panel_rect = pygame.Rect(self.x, self.y, self.width, 320)
+        # Panel background (compact to fit in sidebar)
+        panel_rect = pygame.Rect(self.x, self.y, self.width, 265)  # Compact height
         pygame.draw.rect(surface, (40, 42, 54), panel_rect, border_radius=8)
         pygame.draw.rect(surface, (68, 71, 90), panel_rect, width=2, border_radius=8)
 
@@ -569,14 +569,14 @@ class SearchParameterPanel:
             )
             surface.blit(info, (self.x + 15, self.y + 155))
 
-        # Changed indicator
+        # Changed indicator (between last slider and buttons)
         if self.parameters_changed:
             changed = self.small_font.render(
                 "* Click Apply to use new values",
                 True,
                 (255, 184, 108)
             )
-            surface.blit(changed, (self.x + 10, self.y + 230))
+            surface.blit(changed, (self.x + 10, self.y + 190))
 
         # Draw buttons
         self.apply_button.draw(surface)

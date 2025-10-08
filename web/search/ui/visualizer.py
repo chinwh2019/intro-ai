@@ -45,10 +45,10 @@ class SearchVisualizer:
         self.stats: Dict = {}
         self.current_algorithm_name: str = "None"  # Track current algorithm
 
-        # Interactive parameter panel (positioned to avoid overlap with legend)
+        # Interactive parameter panel (positioned at very bottom to avoid all overlaps)
         self.parameter_panel = SearchParameterPanel(
             x=10,
-            y=config.WINDOW_HEIGHT - 330,  # Moved down to avoid legend overlap
+            y=config.WINDOW_HEIGHT - 270,  # At very bottom (700-270=430, below random at ~420)
             width=config.SIDEBAR_WIDTH - 20,
             on_apply=on_parameter_change
         )
