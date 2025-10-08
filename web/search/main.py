@@ -244,12 +244,22 @@ class SearchApp:
 
 async def main():
     """Async main loop for web compatibility"""
-    print("Loading Search Module...")
+    try:
+        print("=== SEARCH MODULE STARTING ===")
+        print("Creating SearchApp...")
 
-    app = SearchApp()
-    clock = pygame.time.Clock()
+        app = SearchApp()
+        print("✓ SearchApp created")
 
-    print("✓ Ready! Press 1-5 to select algorithm")
+        clock = pygame.time.Clock()
+        print("✓ Clock created")
+
+        print("=== READY! Press 1-5 to select algorithm ===")
+    except Exception as e:
+        print(f"❌ ERROR during initialization: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
 
     # Main game loop (MUST be async for web)
     while app.running:
@@ -270,6 +280,6 @@ async def main():
     pygame.quit()
 
 
-# Entry point
-if __name__ == '__main__':
-    asyncio.run(main())
+# Entry point - for web, pygbag calls main() automatically
+# Don't use asyncio.run() in browser!
+asyncio.run(main())
