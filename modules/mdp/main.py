@@ -51,6 +51,9 @@ class MDPApp:
         # Terminal state message
         self.terminal_state_message = ""
 
+        # Reference to screen for convenience
+        self.screen = self.visualizer.screen
+
         print("MDP Visualization")
         print("=" * 60)
         print("Grid World:")
@@ -98,6 +101,9 @@ class MDPApp:
         self.show_learning_process = False
         self.policy_demo_mode = False
         self.terminal_state_message = ""
+
+        # Update screen reference
+        self.screen = self.visualizer.screen
 
         print(f"Environment reset! Converged in {self.solver.iteration_count} iterations")
 
@@ -276,9 +282,6 @@ class MDPApp:
             config.COLOR_TEXT
         )
         self.screen.blit(mode_text, (config.SIDEBAR_WIDTH + 10, config.WINDOW_HEIGHT - 30))
-
-        # Access screen from visualizer
-        self.screen = self.visualizer.screen
 
     def run(self):
         """Main loop"""
