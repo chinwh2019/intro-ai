@@ -8,6 +8,7 @@ from modules.mdp.config import config
 from modules.mdp.environments.grid_world import GridWorld
 from modules.mdp.core.solver import ValueIteration
 from modules.mdp.core.mdp import State
+from modules.mdp.core.learner import MDPLearner
 from modules.mdp.ui.visualizer import MDPVisualizer
 
 
@@ -55,8 +56,14 @@ class MDPApp:
         self.learning_paused = False  # For stepping through animation
         self.step_mode = False  # Single step flag
         self.policy_demo_mode = False
+        self.manual_learning_mode = False  # Manual learning with arrow keys
         self.current_iteration = 0
         self.walker_pos = self.grid_world.start_pos
+
+        # Manual learning: separate V and Q for student exploration
+        self.learned_V = {}
+        self.learned_Q = {}
+        self.episode_count = 0
 
         # Terminal state message
         self.terminal_state_message = ""
@@ -80,7 +87,7 @@ class MDPApp:
         print("\nControls:")
         print("  V: Toggle values | P: Toggle policy | Q: Toggle Q-values")
         print("  L: Show learning process | SPACE: Pause learning | S: Step (when paused)")
-        print("  D: Policy demo | R: Reset | Arrow Keys: Manual control")
+        print("  D: Policy demo | M: Manual learning | R: Reset | Arrow Keys: Move agent")
         print("=" * 60)
 
     def reset(self):
@@ -187,6 +194,74 @@ class MDPApp:
             self.visualizer.update_state(initial_state)
             print("Learning animation stopped")
 
+    def toggle_manual_learning(self):
+        """Toggle manual learning mode"""
+        self.manual_learning_mode = not self.manual_learning_mode
+        self.policy_demo_mode = False  # Can't be in both modes
+
+        if self.manual_learning_mode:
+            # Reset learned values
+            self.reset_learning()
+            # Force Q-values to show (need to see learning)
+            config.SHOW_Q_VALUES = True
+            config.SHOW_POLICY = False
+            print("\n✓ Manual Learning Mode - Use arrow keys to explore and learn!")
+            print("  Your movements update Q-values (watch triangles change color)")
+            print("  Press M again to exit")
+        else:
+            # Return to showing optimal values
+            initial_state = {
+                'values': {s: self.solver.values[s] if self.solver.mdp.is_terminal(s) else 0.0
+                          for s in self.solver.mdp.states},
+                'q_values': {(s, a): self.solver.values[s] if self.solver.mdp.is_terminal(s) else 0.0
+                            for s in self.solver.mdp.states for a in self.solver.mdp.actions},
+                'policy': {},
+                'iteration': 0,
+                'converged': False,
+            }
+            self.visualizer.update_state(initial_state)
+            print("Manual learning mode stopped")
+
+    def reset_learning(self):
+        """Reset learned values for manual learning"""
+        # Initialize V and Q to zeros
+        self.learned_V = {s: 0.0 for s in self.grid_world.mdp.states}
+        self.learned_Q = {s: {a: 0.0 for a in self.grid_world.mdp.actions}
+                         for s in self.grid_world.mdp.states}
+
+        # Set terminals to their rewards
+        for state in self.grid_world.mdp.terminal_states:
+            if state in self.grid_world.mdp.terminal_rewards:
+                reward = self.grid_world.mdp.terminal_rewards[state]
+                self.learned_V[state] = reward
+                for action in self.grid_world.mdp.actions:
+                    self.learned_Q[state][action] = reward
+
+        # Reset position and episode count
+        self.walker_pos = self.grid_world.start_pos
+        self.episode_count = 0
+
+        # Update display to show learned values
+        self._update_learned_display()
+
+    def _update_learned_display(self):
+        """Update visualizer to show learned values"""
+        # Convert learned_Q to format expected by visualizer
+        q_values_display = {}
+        for state, actions in self.learned_Q.items():
+            for action, value in actions.items():
+                q_values_display[(state, action)] = value
+
+        # Update visualizer
+        display_state = {
+            'values': self.learned_V.copy(),
+            'q_values': q_values_display,
+            'policy': {},  # No policy during learning
+            'iteration': self.episode_count,
+            'converged': False,
+        }
+        self.visualizer.update_state(display_state)
+
     def update_policy_demo(self):
         """Update policy demo - move walker"""
         current_state = State(self.walker_pos)
@@ -285,11 +360,14 @@ class MDPApp:
                 elif event.key == pygame.K_d:
                     self.toggle_policy_demo()
 
+                elif event.key == pygame.K_m:
+                    self.toggle_manual_learning()
+
                 elif event.key == pygame.K_r:
                     self.reset()
 
-                # Manual control with arrow keys (when not in demo mode)
-                elif not self.policy_demo_mode:
+                # Arrow keys: manual control or manual learning
+                elif not self.policy_demo_mode and not self.show_learning_process:
                     action_map = {
                         pygame.K_UP: "UP",
                         pygame.K_DOWN: "DOWN",
@@ -301,21 +379,49 @@ class MDPApp:
                         action = action_map[event.key]
                         current_state = State(self.walker_pos)
 
+                        # Get reward for this action
+                        reward = self.grid_world.mdp.get_reward(current_state, action)
+
                         # Get next state
                         transitions = self.grid_world.mdp.get_transition_states_and_probs(current_state, action)
                         if transitions:
                             next_states = [s.position for s, p in transitions]
                             probabilities = [p for s, p in transitions]
-                            self.walker_pos = random.choices(next_states, weights=probabilities, k=1)[0]
+                            next_pos = random.choices(next_states, weights=probabilities, k=1)[0]
+                            next_state = State(next_pos)
 
-                            print(f"Moved {action} to {self.walker_pos}")
+                            # If in manual learning mode, update learned values
+                            if self.manual_learning_mode:
+                                MDPLearner.update_values(
+                                    current_state,
+                                    action,
+                                    next_state,
+                                    reward,
+                                    self.learned_V,
+                                    self.learned_Q,
+                                    config.DISCOUNT,
+                                    config.LEARNING_RATE if hasattr(config, 'LEARNING_RATE') else 0.1
+                                )
+                                # Update display with learned values
+                                self._update_learned_display()
+                                print(f"Moved {action} to {next_pos} | V({current_state.position})={self.learned_V[current_state]:.2f}")
+                            else:
+                                print(f"Moved {action} to {next_pos}")
+
+                            self.walker_pos = next_pos
 
                             # Check terminal
                             if self.walker_pos == self.grid_world.goal_pos:
                                 print("Reached goal!")
+                                self.episode_count += 1
+                                if self.manual_learning_mode:
+                                    print(f"Episode {self.episode_count} complete")
                                 self.walker_pos = self.grid_world.start_pos
                             elif self.walker_pos == self.grid_world.danger_pos:
                                 print("Hit danger!")
+                                self.episode_count += 1
+                                if self.manual_learning_mode:
+                                    print(f"Episode {self.episode_count} complete")
                                 self.walker_pos = self.grid_world.start_pos
 
     def update(self):
@@ -344,11 +450,20 @@ class MDPApp:
             self.screen.blit(text, (x, y))
 
         # Draw mode indicator
-        mode = "Policy Demo" if self.policy_demo_mode else "Manual Control"
+        if self.manual_learning_mode:
+            mode = f"Manual Learning (Episode {self.episode_count})"
+            mode_color = (80, 250, 123)  # Green
+        elif self.policy_demo_mode:
+            mode = "Policy Demo (Optimal)"
+            mode_color = (139, 233, 253)  # Cyan
+        else:
+            mode = "Observation Mode"
+            mode_color = config.COLOR_TEXT
+
         mode_text = self.visualizer.small_font.render(
             f"Mode: {mode}",
             True,
-            config.COLOR_TEXT
+            mode_color
         )
         self.screen.blit(mode_text, (config.SIDEBAR_WIDTH + 10, config.WINDOW_HEIGHT - 30))
 

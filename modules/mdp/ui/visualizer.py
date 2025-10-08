@@ -258,12 +258,12 @@ class MDPVisualizer:
 
         # Instructions (split into two lines for clarity)
         instructions_line1 = self.tiny_font.render(
-            "L: Learning Animation | SPACE: Pause | S: Step | D: Policy Demo | R: Reset",
+            "L: Learning Animation | SPACE: Pause | S: Step | D: Policy Demo | M: Manual Learning",
             True,
             config.COLOR_TEXT
         )
         instructions_line2 = self.tiny_font.render(
-            "V: Values | P: Policy | Q: Q-Values (Triangular) | Arrow Keys: Manual Control",
+            "V: Values | P: Policy | Q: Q-Values (Triangular) | Arrow Keys: Move | R: Reset",
             True,
             config.COLOR_TEXT
         )

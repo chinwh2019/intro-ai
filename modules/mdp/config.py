@@ -27,6 +27,7 @@ class MDPConfig:
     MAX_ITERATIONS: int = 1000
     ANIMATION_SPEED: float = 1.0     # Multiplier for iteration speed
     ITERATION_DELAY: float = 0.5     # Seconds between iterations
+    LEARNING_RATE: float = 0.1       # For manual learning mode (α)
 
     # Visualization settings
     SHOW_VALUES: bool = True
