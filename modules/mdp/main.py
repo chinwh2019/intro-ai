@@ -92,29 +92,34 @@ class MDPApp:
 
     def on_parameter_change(self, params: dict):
         """Handle parameter change from sliders - re-solve MDP"""
-        print("\n" + "=" * 60)
-        print("🔄 Applying new parameters...")
-        print(f"  Discount (γ): {params['discount']:.2f}")
-        print(f"  Noise: {params['noise']:.2f}")
-        print(f"  Living Reward: {params['living_reward']:.3f}")
+        try:
+            print("\n" + "=" * 60)
+            print("🔄 Applying new parameters...")
+            print(f"  Discount (γ): {params['discount']:.2f}")
+            print(f"  Noise: {params['noise']:.2f}")
+            print(f"  Living Reward: {params['living_reward']:.3f}")
 
-        # Update config
-        config.DISCOUNT = params['discount']
-        config.NOISE = params['noise']
-        config.LIVING_REWARD = params['living_reward']
+            # Update config
+            config.DISCOUNT = params['discount']
+            config.NOISE = params['noise']
+            config.LIVING_REWARD = params['living_reward']
 
-        # Disable active modes
-        self.show_learning_process = False
-        self.policy_demo_mode = False
-        self.manual_learning_mode = False
-        self.learning_paused = False
+            # Disable active modes
+            self.show_learning_process = False
+            self.policy_demo_mode = False
+            self.manual_learning_mode = False
+            self.learning_paused = False
 
-        # Re-solve with new parameters
-        self._resolve_mdp()
+            # Re-solve with new parameters
+            self._resolve_mdp()
 
-        print("✓ MDP re-solved with new parameters!")
-        print(f"  Converged in {self.solver.iteration_count} iterations")
-        print("=" * 60)
+            print("✓ MDP re-solved with new parameters!")
+            print(f"  Converged in {self.solver.iteration_count} iterations")
+            print("=" * 60)
+        except Exception as e:
+            print(f"❌ Error applying parameters: {e}")
+            import traceback
+            traceback.print_exc()
 
     def _resolve_mdp(self):
         """Re-solve MDP with current parameters (keep same grid layout)"""

@@ -99,18 +99,25 @@ class MDPApp:
 
     def on_parameter_change(self, params: dict):
         """Handle parameter change from sliders"""
-        print("\n🔄 Applying new parameters...")
-        print(f"  Discount: {params['discount']:.2f}")
-        print(f"  Noise: {params['noise']:.2f}")
-        print(f"  Living reward: {params['living_reward']:.3f}")
+        try:
+            print("\n🔄 Applying new parameters...")
+            print(f"  Discount: {params['discount']:.2f}")
+            print(f"  Noise: {params['noise']:.2f}")
+            print(f"  Living reward: {params['living_reward']:.3f}")
 
-        # Update config
-        config.config.DISCOUNT = params['discount']
-        config.config.NOISE = params['noise']
-        config.config.LIVING_REWARD = params['living_reward']
+            # Update config
+            config.config.DISCOUNT = params['discount']
+            config.config.NOISE = params['noise']
+            config.config.LIVING_REWARD = params['living_reward']
 
-        # Re-solve MDP
-        self._resolve_mdp()
+            # Re-solve MDP
+            self._resolve_mdp()
+
+            print("✓ Parameters applied successfully!")
+        except Exception as e:
+            print(f"❌ Error applying parameters: {e}")
+            import traceback
+            traceback.print_exc()
 
     def _resolve_mdp(self):
         """Re-solve MDP with new parameters"""

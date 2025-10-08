@@ -252,7 +252,7 @@ class ParameterPanel:
 
         self.discount_slider = Slider(
             x=slider_x,
-            y=y + 40,
+            y=y + 50,  # More space from title
             width=slider_width,
             min_val=0.0,
             max_val=1.0,
@@ -262,7 +262,7 @@ class ParameterPanel:
 
         self.noise_slider = Slider(
             x=slider_x,
-            y=y + 110,
+            y=y + 120,  # More space between sliders
             width=slider_width,
             min_val=0.0,
             max_val=1.0,
@@ -272,7 +272,7 @@ class ParameterPanel:
 
         self.living_reward_slider = Slider(
             x=slider_x,
-            y=y + 180,
+            y=y + 190,  # More space
             width=slider_width,
             min_val=-1.0,
             max_val=0.0,
@@ -281,7 +281,7 @@ class ParameterPanel:
         )
 
         # Create buttons
-        button_y = y + 250
+        button_y = y + 260  # More space for readability
         button_width = (width - 30) // 2
 
         self.apply_button = Button(
@@ -315,14 +315,23 @@ class ParameterPanel:
 
     def _on_apply_click(self):
         """Handle apply button click"""
+        print("DEBUG: Apply button clicked!")  # Debug message
         if self.on_apply:
             params = self.get_parameters()
-            self.on_apply(params)
-            self.parameters_changed = False
-            print(f"\n✓ Applied new parameters:")
-            print(f"  Discount: {params['discount']:.2f}")
-            print(f"  Noise: {params['noise']:.2f}")
-            print(f"  Living reward: {params['living_reward']:.3f}")
+            print(f"DEBUG: Calling callback with params: {params}")  # Debug
+            try:
+                self.on_apply(params)
+                self.parameters_changed = False
+                print(f"\n✓ Applied new parameters:")
+                print(f"  Discount: {params['discount']:.2f}")
+                print(f"  Noise: {params['noise']:.2f}")
+                print(f"  Living reward: {params['living_reward']:.3f}")
+            except Exception as e:
+                print(f"ERROR in callback: {e}")
+                import traceback
+                traceback.print_exc()
+        else:
+            print("DEBUG: No callback registered!")
 
     def _on_reset_click(self):
         """Handle reset button click"""
