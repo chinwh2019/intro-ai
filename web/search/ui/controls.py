@@ -552,22 +552,22 @@ class SearchParameterPanel:
         self.heuristic_weight_slider.draw(surface)
         self.complexity_slider.draw(surface)
 
-        # Show admissibility warning for heuristic weight
+        # Show admissibility warning for heuristic weight (next to slider, not below)
         weight = self.heuristic_weight_slider.current_val
         if weight > 1.0:
             warning = self.small_font.render(
-                "⚠ Inadmissible (may not be optimal)",
+                "⚠ Inadmissible",
                 True,
                 (255, 184, 108)
             )
-            surface.blit(warning, (self.x + 15, self.y + 155))
+            surface.blit(warning, (self.x + 15, self.y + 130))
         elif weight == 1.0:
             info = self.small_font.render(
-                "✓ Admissible (optimal guaranteed)",
+                "✓ Admissible",
                 True,
                 (80, 250, 123)
             )
-            surface.blit(info, (self.x + 15, self.y + 155))
+            surface.blit(info, (self.x + 15, self.y + 130))
 
         # Changed indicator (between last slider and buttons)
         if self.parameters_changed:

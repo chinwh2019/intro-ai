@@ -1,10 +1,16 @@
 """
-Main application for Search Algorithms Module
+Search Algorithms Module - Web Version
+Runs in browser via Pygbag/WebAssembly
 """
 
+# /// script
+# [pygbag]
+# autorun = true
+# ///
+
+import asyncio
 import pygame
 import sys
-import time
 from typing import Optional
 from config import config
 from core.environment import Maze
@@ -46,6 +52,10 @@ class SearchApp:
         self.step_mode = False
         self.algorithm_complete = False
 
+        # Time tracking for web (non-blocking)
+        self.last_step_time = 0
+        self.step_interval = config.STEP_DELAY / config.ANIMATION_SPEED
+
         print("Search Algorithms Visualization")
         print("=" * 50)
         print("Controls:")
@@ -81,6 +91,7 @@ class SearchApp:
 
             # Apply speed immediately (affects current search)
             config.ANIMATION_SPEED = params['speed']
+            self.step_interval = config.STEP_DELAY / config.ANIMATION_SPEED  # Update interval
 
             # Store heuristic weight (applies to next algorithm start)
             self.heuristic_weight = params['heuristic_weight']
@@ -204,14 +215,13 @@ class SearchApp:
                 elif event.key == pygame.K_q:
                     self.running = False
 
-    def update(self):
-        """Update application state"""
+    def update(self, current_time: float):
+        """Update application state (web-compatible time-based)"""
         if not self.paused and not self.algorithm_complete:
-            # Execute algorithm step
-            self.step_algorithm()
-
-            # Delay based on speed setting
-            time.sleep(config.STEP_DELAY / config.ANIMATION_SPEED)
+            # Time-based stepping for web (non-blocking)
+            if current_time - self.last_step_time >= self.step_interval:
+                self.step_algorithm()
+                self.last_step_time = current_time
 
         elif self.step_mode:
             self.step_algorithm()
@@ -232,11 +242,34 @@ class SearchApp:
         sys.exit()
 
 
-def main():
-    """Entry point"""
+async def main():
+    """Async main loop for web compatibility"""
+    print("Loading Search Module...")
+
     app = SearchApp()
-    app.run()
+    clock = pygame.time.Clock()
+
+    print("✓ Ready! Press 1-5 to select algorithm")
+
+    # Main game loop (MUST be async for web)
+    while app.running:
+        # Get current time in seconds
+        current_time = pygame.time.get_ticks() / 1000.0
+
+        # Process events and update
+        app.handle_events()
+        app.update(current_time)  # Pass time for non-blocking updates
+        app.render()
+
+        # CRITICAL: Yield control to browser event loop
+        await asyncio.sleep(0)
+
+        # Frame rate limiting
+        clock.tick(config.FPS)
+
+    pygame.quit()
 
 
+# Entry point
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
