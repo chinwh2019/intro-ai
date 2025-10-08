@@ -24,6 +24,7 @@ class SearchVisualizer:
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 24)
         self.small_font = pygame.font.Font(None, 16)
+        self.tiny_font = pygame.font.Font(None, 14)  # For compact legend
 
         # Calculate cell size based on maze dimensions
         maze_rect = config.get_maze_rect()
