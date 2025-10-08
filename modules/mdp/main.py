@@ -202,12 +202,14 @@ class MDPApp:
         if self.manual_learning_mode:
             # Reset learned values
             self.reset_learning()
-            # Force Q-values to show (need to see learning)
-            config.SHOW_Q_VALUES = True
+            # Suggest enabling Q-values if not already on
+            if not config.SHOW_Q_VALUES:
+                config.SHOW_Q_VALUES = True
+                print("(Auto-enabled Q-values display - press Q to toggle)")
             config.SHOW_POLICY = False
             print("\n✓ Manual Learning Mode - Use arrow keys to explore and learn!")
             print("  Your movements update Q-values (watch triangles change color)")
-            print("  Press M again to exit")
+            print("  Press Q to toggle triangular display, M to exit")
         else:
             # Return to showing optimal values
             initial_state = {
@@ -400,29 +402,34 @@ class MDPApp:
                                     self.learned_V,
                                     self.learned_Q,
                                     config.DISCOUNT,
-                                    config.LEARNING_RATE if hasattr(config, 'LEARNING_RATE') else 0.1
+                                    config.LEARNING_RATE
                                 )
-                                # Update display with learned values
-                                self._update_learned_display()
                                 print(f"Moved {action} to {next_pos} | V({current_state.position})={self.learned_V[current_state]:.2f}")
                             else:
                                 print(f"Moved {action} to {next_pos}")
 
                             self.walker_pos = next_pos
 
-                            # Check terminal
+                            # Check terminal and update display AFTER terminal handling
                             if self.walker_pos == self.grid_world.goal_pos:
                                 print("Reached goal!")
                                 self.episode_count += 1
                                 if self.manual_learning_mode:
-                                    print(f"Episode {self.episode_count} complete")
+                                    print(f"Episode {self.episode_count} complete - Q-values updated!")
+                                    # Update display one more time to show terminal reward learning
+                                    self._update_learned_display()
                                 self.walker_pos = self.grid_world.start_pos
                             elif self.walker_pos == self.grid_world.danger_pos:
                                 print("Hit danger!")
                                 self.episode_count += 1
                                 if self.manual_learning_mode:
-                                    print(f"Episode {self.episode_count} complete")
+                                    print(f"Episode {self.episode_count} complete - Q-values updated!")
+                                    # Update display to show penalty learning
+                                    self._update_learned_display()
                                 self.walker_pos = self.grid_world.start_pos
+                            elif self.manual_learning_mode:
+                                # Update display for non-terminal moves
+                                self._update_learned_display()
 
     def update(self):
         """Update application"""

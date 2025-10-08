@@ -102,7 +102,10 @@ class MDPVisualizer:
 
                 else:
                     # Normal cell
-                    if config.SHOW_Q_VALUES and state in self.policy:
+                    # Check if we should show Q-values (either has policy or has any Q-values)
+                    has_q_values = any((state, a) in self.q_values for a in ['UP', 'DOWN', 'LEFT', 'RIGHT'])
+
+                    if config.SHOW_Q_VALUES and has_q_values:
                         # Draw with triangular Q-value partitions
                         self._draw_cell_with_triangles(rect, state)
                     else:
