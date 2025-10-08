@@ -54,7 +54,7 @@ class SearchApp:
 
         # Time tracking for web (non-blocking)
         self.last_step_time = 0
-        self.step_interval = config.config.STEP_DELAY / config.config.ANIMATION_SPEED
+        self.step_interval = config.STEP_DELAY / config.ANIMATION_SPEED
 
         print("Search Algorithms Visualization")
         print("=" * 50)
