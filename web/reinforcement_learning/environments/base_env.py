@@ -1,14 +1,13 @@
-"""Base environment interface for RL"""
+"""Base environment interface for RL - Browser-safe (no NumPy)"""
 
 from abc import ABC, abstractmethod
 from typing import Tuple, Any
-import numpy as np
 
 class RLEnvironment(ABC):
     """Base class for RL environments"""
 
     @abstractmethod
-    def reset(self) -> np.ndarray:
+    def reset(self) -> Tuple:
         """
         Reset environment to initial state
 
@@ -18,7 +17,7 @@ class RLEnvironment(ABC):
         pass
 
     @abstractmethod
-    def step(self, action: int) -> Tuple[np.ndarray, float, bool, dict]:
+    def step(self, action: int) -> Tuple[Tuple, float, bool, dict]:
         """
         Take action in environment
 
