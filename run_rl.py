@@ -101,7 +101,12 @@ if __name__ == '__main__':
     print(f"  Discount (γ): {config.DISCOUNT_FACTOR}")
     print(f"  Epsilon: {config.EPSILON_START} → {config.EPSILON_END}")
     print(f"  Game Speed: {config.GAME_SPEED}")
+    if args.load:
+        print(f"  Loading model from: {config.MODEL_SAVE_PATH}")
     print()
 
-    # Run main application
-    main()
+    # Import and run directly (avoid double argument parsing)
+    from modules.reinforcement_learning.main import RLTrainer
+
+    trainer = RLTrainer(load_model=args.load)
+    trainer.run()

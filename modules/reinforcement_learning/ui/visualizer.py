@@ -214,10 +214,12 @@ class RLVisualizer:
             ax.clear()
 
         # Plot scores
-        self.axes[0].plot(self.stats.episode_scores, alpha=0.3, color='blue')
+        self.axes[0].plot(self.stats.episode_scores, alpha=0.3, color='blue', label='Score')
         if self.stats.avg_scores:
-            self.axes[0].plot(range(len(self.stats.avg_scores), len(self.stats.avg_scores) + len(self.stats.avg_scores)),
-                            self.stats.avg_scores, color='red', linewidth=2, label='Avg')
+            # Moving average starts at window size (100 episodes)
+            window = 100
+            x_avg = range(window, window + len(self.stats.avg_scores))
+            self.axes[0].plot(x_avg, self.stats.avg_scores, color='red', linewidth=2, label='Avg (100 ep)')
         self.axes[0].set_title('Score per Episode')
         self.axes[0].set_xlabel('Episode')
         self.axes[0].set_ylabel('Score')
@@ -225,10 +227,12 @@ class RLVisualizer:
         self.axes[0].grid(True, alpha=0.3)
 
         # Plot rewards
-        self.axes[1].plot(self.stats.episode_rewards, alpha=0.3, color='green')
+        self.axes[1].plot(self.stats.episode_rewards, alpha=0.3, color='green', label='Reward')
         if self.stats.avg_rewards:
-            self.axes[1].plot(range(len(self.stats.avg_rewards), len(self.stats.avg_rewards) + len(self.stats.avg_rewards)),
-                            self.stats.avg_rewards, color='red', linewidth=2, label='Avg')
+            # Moving average starts at window size (100 episodes)
+            window = 100
+            x_avg = range(window, window + len(self.stats.avg_rewards))
+            self.axes[1].plot(x_avg, self.stats.avg_rewards, color='red', linewidth=2, label='Avg (100 ep)')
         self.axes[1].set_title('Total Reward per Episode')
         self.axes[1].set_xlabel('Episode')
         self.axes[1].set_ylabel('Reward')
