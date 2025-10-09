@@ -13,8 +13,9 @@ import sys
 import os
 import argparse
 
-# Add modules to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add project root to path (parent of scripts/)
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
 
 from modules.reinforcement_learning.main import main
 from modules.reinforcement_learning.config import config, load_preset, PRESETS

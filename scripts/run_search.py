@@ -12,8 +12,9 @@ import sys
 import os
 import argparse
 
-# Add modules to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add project root to path (parent of scripts/)
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
 
 from modules.search.main import main
 from modules.search.config import config, load_preset, PRESETS
