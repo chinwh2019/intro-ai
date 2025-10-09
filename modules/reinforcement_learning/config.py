@@ -105,8 +105,18 @@ def load_preset(name: str):
     """Load a preset configuration"""
     global config
     if name in PRESETS:
-        config = PRESETS[name]
+        # Get preset config
+        preset_config = PRESETS[name]
+
+        # Update all attributes of global config (don't replace the object!)
+        # This ensures all references to config stay valid
+        for attr in dir(preset_config):
+            if not attr.startswith('_') and attr.isupper():
+                setattr(config, attr, getattr(preset_config, attr))
+
         print(f"✓ Loaded preset: {name}")
+        print(f"  Learning rate: {config.LEARNING_RATE}")
+        print(f"  Game speed: {config.GAME_SPEED}")
     else:
         print(f"✗ Unknown preset: {name}")
         print(f"  Available: {list(PRESETS.keys())}")

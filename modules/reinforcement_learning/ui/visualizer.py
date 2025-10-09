@@ -95,9 +95,12 @@ class RLVisualizer:
 
             print(f"\n{'='*60}")
             print(f"📦 Loading preset: {actual_preset}")
+
+            # Load preset (updates config attributes in-place)
             load_preset(actual_preset)
 
-            # Update panel to reflect new values
+            # Update panel sliders to reflect new values
+            print(f"Updating sliders...")
             self.parameter_panel.set_parameters(
                 learning_rate=config.LEARNING_RATE,
                 discount=config.DISCOUNT_FACTOR,
@@ -114,12 +117,14 @@ class RLVisualizer:
             self.agent.discount = config.DISCOUNT_FACTOR
             self.agent.epsilon_decay = config.EPSILON_DECAY
 
-            print(f"✓ Preset loaded: {actual_preset}")
+            print(f"✓ Preset applied: {actual_preset}")
             print(f"  Learning Rate: {config.LEARNING_RATE}")
             print(f"  Discount: {config.DISCOUNT_FACTOR}")
             print(f"  Epsilon Decay: {config.EPSILON_DECAY}")
             print(f"  Speed: {config.GAME_SPEED}")
             print(f"{'='*60}")
+        else:
+            print(f"❌ Unknown preset: {preset_name}")
 
     def handle_parameter_event(self, event: pygame.event.Event):
         """Handle events for parameter panel"""
