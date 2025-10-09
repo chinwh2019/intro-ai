@@ -237,64 +237,96 @@ class RLVisualizer:
         panel_surface = pygame.Surface((config.VIZ_WIDTH, config.WINDOW_HEIGHT - stats_y_start))
         panel_surface.fill(config.COLOR_UI_BG)
 
-        y_offset = 5  # Start closer to top
+        # TWO-COLUMN LAYOUT for better space usage
+        left_col_x = 10
+        right_col_x = config.VIZ_WIDTH // 2 + 5  # Start right column at midpoint
+        y_offset = 5
 
-        # Compact title
+        # Title (spans both columns)
         title = self.small_font.render("Current Status", True, config.COLOR_TEXT)
-        panel_surface.blit(title, (10, y_offset))
+        panel_surface.blit(title, (left_col_x, y_offset))
         y_offset += 22
 
-        # Episode info (different display for inference vs training) - single line
+        # === LEFT COLUMN ===
+        left_y = y_offset
+
+        # Episode info (different display for inference vs training)
         if self.is_inference_mode:
-            info = f"Demo #{demo_runs} | Score: {self.env.score} | Steps: {self.env.frame_count}"
+            info = f"Demo #{demo_runs}"
         else:
-            info = f"Ep {episode}/{config.NUM_EPISODES} | Score: {self.env.score} | Steps: {self.env.frame_count}"
+            info = f"Episode: {episode}/{config.NUM_EPISODES}"
 
         text = self.small_font.render(info, True, config.COLOR_TEXT)
-        panel_surface.blit(text, (10, y_offset))
-        y_offset += 20
+        panel_surface.blit(text, (left_col_x, left_y))
+        left_y += 18
 
-        # Agent stats - more compact
+        # Game state
+        text = self.small_font.render(f"Score: {self.env.score}", True, config.COLOR_TEXT)
+        panel_surface.blit(text, (left_col_x, left_y))
+        left_y += 18
+
+        text = self.small_font.render(f"Steps: {self.env.frame_count}", True, config.COLOR_TEXT)
+        panel_surface.blit(text, (left_col_x, left_y))
+        left_y += 22
+
+        # Agent params
         agent_stats = self.agent.get_statistics()
-        stats_text = f"ε: {agent_stats['epsilon']:.3f} | α: {self.agent.learning_rate:.3f} | Q-size: {agent_stats['q_table_size']}"
-        text = self.small_font.render(stats_text, True, config.COLOR_TEXT)
-        panel_surface.blit(text, (10, y_offset))
-        y_offset += 22
+        text = self.small_font.render(f"ε: {agent_stats['epsilon']:.3f}", True, config.COLOR_TEXT)
+        panel_surface.blit(text, (left_col_x, left_y))
+        left_y += 18
 
-        # Q-values for current state - more compact
+        text = self.small_font.render(f"α: {self.agent.learning_rate:.4f}", True, config.COLOR_TEXT)
+        panel_surface.blit(text, (left_col_x, left_y))
+        left_y += 18
+
+        text = self.small_font.render(f"Q-size: {agent_stats['q_table_size']}", True, config.COLOR_TEXT)
+        panel_surface.blit(text, (left_col_x, left_y))
+        left_y += 18
+
+        # === RIGHT COLUMN ===
+        right_y = y_offset
+
+        # Q-values for current state
         if config.SHOW_Q_VALUES and current_state is not None:
-            y_offset += 3  # Small separator
             q_values = self.agent.get_q_values(current_state)
             action_names = ["Straight", "Right", "Left"]
 
             text = self.small_font.render("Q-Values:", True, config.COLOR_TEXT)
-            panel_surface.blit(text, (10, y_offset))
-            y_offset += 20
+            panel_surface.blit(text, (right_col_x, right_y))
+            right_y += 20
 
             max_q = max(q_values) if len(q_values) > 0 else 0
             for i, (name, q) in enumerate(zip(action_names, q_values)):
                 color = (80, 250, 123) if q == max_q and max_q != 0 else config.COLOR_TEXT
                 text = self.small_font.render(
-                    f"  {name}: {q:.2f}",
+                    f"{name}: {q:.2f}",
                     True,
                     color
                 )
-                panel_surface.blit(text, (10, y_offset))
-                y_offset += 18  # Tighter spacing
+                panel_surface.blit(text, (right_col_x, right_y))
+                right_y += 18
+
+            right_y += 8  # Separator
 
         # Training summary - only if not in inference mode
         if not self.is_inference_mode and len(self.stats.episode_scores) > 0:
-            y_offset += 5  # Small separator
             summary = self.stats.get_summary()
 
             text = self.small_font.render("Recent (100 ep):", True, config.COLOR_TEXT)
-            panel_surface.blit(text, (10, y_offset))
-            y_offset += 20
+            panel_surface.blit(text, (right_col_x, right_y))
+            right_y += 20
 
-            summary_text = f"  Avg: {summary['avg_score']:.1f} | Max: {summary['max_score']} | Reward: {summary['avg_reward']:.1f}"
-            text = self.small_font.render(summary_text, True, config.COLOR_TEXT)
-            panel_surface.blit(text, (10, y_offset))
-            y_offset += 18
+            text = self.small_font.render(f"Avg: {summary['avg_score']:.1f}", True, config.COLOR_TEXT)
+            panel_surface.blit(text, (right_col_x, right_y))
+            right_y += 18
+
+            text = self.small_font.render(f"Max: {summary['max_score']}", True, config.COLOR_TEXT)
+            panel_surface.blit(text, (right_col_x, right_y))
+            right_y += 18
+
+            text = self.small_font.render(f"Reward: {summary['avg_reward']:.1f}", True, config.COLOR_TEXT)
+            panel_surface.blit(text, (right_col_x, right_y))
+            right_y += 18
 
         # Blit stats panel to screen (below parameter panel)
         self.screen.blit(panel_surface, (panel_x, stats_y_start))
