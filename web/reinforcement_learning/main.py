@@ -25,21 +25,29 @@ class RLTrainer:
     """RL training application"""
 
     def __init__(self, load_model: bool = False):
+        print("RLTrainer.__init__ starting...")
+
         # Create environment
+        print("Creating SnakeEnv...")
         self.env = SnakeEnv(
             width=config.GAME_WIDTH,
             height=config.GAME_HEIGHT,
             block_size=config.BLOCK_SIZE
         )
+        print(f"✓ SnakeEnv created: {self.env.width}x{self.env.height}")
 
         # Create agent
+        print("Creating QLearningAgent...")
         self.agent = QLearningAgent(
             state_size=self.env.get_state_size(),
             action_size=self.env.get_action_size()
         )
+        print("✓ QLearningAgent created")
 
         # Create visualizer
+        print("Creating RLVisualizer...")
         self.visualizer = RLVisualizer(self.env, self.agent)
+        print("✓ RLVisualizer created")
 
         # Training state
         self.running = True
@@ -260,5 +268,7 @@ async def main():
         pygame.quit()
 
 
-# Entry point - pygbag calls main() automatically
-asyncio.run(main())
+# Entry point - DON'T use asyncio.run() in browser!
+# Pygbag will call main() directly
+if __name__ == "__main__":
+    asyncio.run(main())
