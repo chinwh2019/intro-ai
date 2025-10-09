@@ -1,7 +1,6 @@
-"""RL Visualization - Web Version (No Matplotlib)"""
+"""RL Visualization - Web Version (No Matplotlib, No NumPy)"""
 
 import pygame
-import numpy as np
 from typing import Optional
 from config import config, load_preset
 from environments.snake import SnakeEnv
@@ -149,7 +148,7 @@ class RLVisualizer:
         self.is_inference_mode = not is_training
         self.parameter_panel.set_training_mode(is_training)
 
-    def render(self, episode: int = 0, current_state: Optional[np.ndarray] = None, demo_runs: int = 0):
+    def render(self, episode: int = 0, current_state: Optional[tuple] = None, demo_runs: int = 0):
         """Render everything"""
         # Clear screen
         self.screen.fill(config.COLOR_BACKGROUND)
@@ -225,7 +224,7 @@ class RLVisualizer:
 
         self.screen.blit(game_surface, (0, 0))
 
-    def _draw_viz_panel(self, episode: int, current_state: Optional[np.ndarray], demo_runs: int = 0):
+    def _draw_viz_panel(self, episode: int, current_state: Optional[tuple], demo_runs: int = 0):
         """Draw visualization panel"""
         panel_x = config.GAME_WIDTH
 

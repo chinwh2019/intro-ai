@@ -1,7 +1,6 @@
-"""Training statistics tracking"""
+"""Training statistics tracking - Browser-safe (no NumPy)"""
 
 from typing import List
-import numpy as np
 
 class TrainingStats:
     """Track training statistics"""
@@ -33,27 +32,26 @@ class TrainingStats:
         self.episode_scores.append(score)
         self.episode_lengths.append(self.current_episode_length)
 
-        # Calculate moving averages (last 100 episodes)
+        # Calculate moving averages (last 100 episodes) - pure Python
         window = 100
         if len(self.episode_rewards) >= window:
-            self.avg_rewards.append(
-                np.mean(self.episode_rewards[-window:])
-            )
-            self.avg_scores.append(
-                np.mean(self.episode_scores[-window:])
-            )
+            recent_rewards = self.episode_rewards[-window:]
+            self.avg_rewards.append(sum(recent_rewards) / len(recent_rewards))
+
+            recent_scores = self.episode_scores[-window:]
+            self.avg_scores.append(sum(recent_scores) / len(recent_scores))
 
     def get_summary(self, last_n: int = 100) -> dict:
-        """Get summary statistics"""
+        """Get summary statistics - pure Python"""
         recent_scores = self.episode_scores[-last_n:]
         recent_rewards = self.episode_rewards[-last_n:]
 
         return {
             'total_episodes': len(self.episode_scores),
-            'avg_score': np.mean(recent_scores) if recent_scores else 0,
+            'avg_score': (sum(recent_scores) / len(recent_scores)) if recent_scores else 0.0,
             'max_score': max(recent_scores) if recent_scores else 0,
             'min_score': min(recent_scores) if recent_scores else 0,
-            'avg_reward': np.mean(recent_rewards) if recent_rewards else 0,
+            'avg_reward': (sum(recent_rewards) / len(recent_rewards)) if recent_rewards else 0.0,
         }
 
     def save(self, filepath: str):

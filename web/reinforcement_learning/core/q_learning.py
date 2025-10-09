@@ -1,22 +1,21 @@
-"""Q-Learning agent implementation"""
+"""Q-Learning agent implementation - Browser-safe (no NumPy)"""
 
-import numpy as np
 import random
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
 from collections import defaultdict
 from config import config
 
 class QLearningAgent:
-    """Q-Learning agent with ε-greedy exploration"""
+    """Q-Learning agent with ε-greedy exploration (pure Python)"""
 
     def __init__(self, state_size: int, action_size: int):
         self.state_size = state_size
         self.action_size = action_size
 
-        # Q-table: maps (state, action) -> Q-value
-        # Using dict for sparse representation
-        self.q_table: Dict[Tuple, np.ndarray] = defaultdict(
-            lambda: np.zeros(action_size)
+        # Q-table: maps state_key -> list[float] of length action_size
+        # Using dict with list instead of numpy array for browser compatibility
+        self.q_table: Dict[Tuple, List[float]] = defaultdict(
+            lambda: [0.0] * action_size
         )
 
         # Hyperparameters
@@ -32,12 +31,12 @@ class QLearningAgent:
         self.exploration_count = 0
         self.exploitation_count = 0
 
-    def get_action(self, state: np.ndarray, training: bool = True) -> int:
+    def get_action(self, state, training: bool = True) -> int:
         """
         Select action using ε-greedy policy
 
         Args:
-            state: Current state
+            state: Current state (tuple or list)
             training: If True, use ε-greedy; if False, use greedy
 
         Returns:
@@ -57,14 +56,16 @@ class QLearningAgent:
             # Exploit: best known action
             self.exploitation_count += 1
             q_values = self.q_table[state_key]
-            return np.argmax(q_values)
+            # Find index of max value (pure Python)
+            max_val = max(q_values)
+            return q_values.index(max_val)
 
     def learn(
         self,
-        state: np.ndarray,
+        state,
         action: int,
         reward: float,
-        next_state: np.ndarray,
+        next_state,
         done: bool
     ):
         """
@@ -75,21 +76,25 @@ class QLearningAgent:
         state_key = tuple(state)
         next_state_key = tuple(next_state)
 
+        # Get Q-value lists
+        q_values = self.q_table[state_key]
+        next_q_values = self.q_table[next_state_key]
+
         # Current Q-value
-        current_q = self.q_table[state_key][action]
+        current_q = q_values[action]
 
         # TD target
         if done:
             td_target = reward
         else:
-            max_next_q = np.max(self.q_table[next_state_key])
+            max_next_q = max(next_q_values)
             td_target = reward + self.discount * max_next_q
 
         # TD error
         td_error = td_target - current_q
 
-        # Update Q-value
-        self.q_table[state_key][action] += self.learning_rate * td_error
+        # Update Q-value (in-place)
+        q_values[action] = current_q + self.learning_rate * td_error
 
     def update_epsilon(self):
         """Decay epsilon after episode"""
@@ -99,17 +104,17 @@ class QLearningAgent:
         )
         self.episodes_trained += 1
 
-    def get_q_values(self, state: np.ndarray) -> np.ndarray:
+    def get_q_values(self, state) -> List[float]:
         """Get Q-values for state"""
         state_key = tuple(state)
-        return self.q_table[state_key].copy()
+        return list(self.q_table[state_key])  # Return copy as list
 
     def get_statistics(self) -> dict:
         """Get agent statistics"""
         total_decisions = self.exploration_count + self.exploitation_count
         exploration_ratio = (
             self.exploration_count / total_decisions
-            if total_decisions > 0 else 0
+            if total_decisions > 0 else 0.0
         )
 
         return {
@@ -123,53 +128,12 @@ class QLearningAgent:
         }
 
     def save(self, filepath: str):
-        """Save Q-table to file"""
-        import json
-        import os
-
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
-
-        # Convert Q-table to serializable format
-        serializable_q_table = {}
-        for state_key, q_values in self.q_table.items():
-            state_str = ','.join(map(str, state_key))
-            serializable_q_table[state_str] = q_values.tolist()
-
-        data = {
-            'q_table': serializable_q_table,
-            'epsilon': self.epsilon,
-            'episodes_trained': self.episodes_trained,
-            'statistics': self.get_statistics(),
-        }
-
-        with open(filepath, 'w') as f:
-            json.dump(data, f, indent=2)
-
-        print(f"✓ Saved Q-table to {filepath}")
-        print(f"  States: {len(self.q_table)}")
+        """Save Q-table to file (disabled in web version)"""
+        print(f"\n⚠️ Save disabled in web version (browser storage not implemented)")
+        print("  To save progress: use the desktop version (run_rl.py)")
 
     def load(self, filepath: str):
-        """Load Q-table from file"""
-        import json
-        import os
-
-        if not os.path.exists(filepath):
-            print(f"✗ File not found: {filepath}")
-            return False
-
-        with open(filepath, 'r') as f:
-            data = json.load(f)
-
-        # Load Q-table
-        self.q_table.clear()
-        for state_str, q_values in data['q_table'].items():
-            state_key = tuple(map(float, state_str.split(',')))
-            self.q_table[state_key] = np.array(q_values)
-
-        self.epsilon = data.get('epsilon', self.epsilon)
-        self.episodes_trained = data.get('episodes_trained', 0)
-
-        print(f"✓ Loaded Q-table from {filepath}")
-        print(f"  States: {len(self.q_table)}")
-        return True
+        """Load Q-table from file (disabled in web version)"""
+        print(f"\n⚠️ Load disabled in web version (browser storage not implemented)")
+        print("  To load models: use the desktop version (run_rl.py)")
+        return False

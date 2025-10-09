@@ -1,9 +1,8 @@
 """
-Snake game environment for reinforcement learning
+Snake game environment for reinforcement learning - Browser-safe (no NumPy)
 """
 
 import random
-import numpy as np
 from typing import Tuple, List
 from environments.base_env import RLEnvironment
 from config import config
@@ -35,7 +34,7 @@ class SnakeEnv(RLEnvironment):
         # Initialize
         self.reset()
 
-    def reset(self) -> np.ndarray:
+    def reset(self) -> Tuple:
         """Reset game to initial state"""
         # Initialize snake in center
         center_x = self.width // 2
@@ -58,7 +57,7 @@ class SnakeEnv(RLEnvironment):
 
         return self._get_state()
 
-    def step(self, action: int) -> Tuple[np.ndarray, float, bool, dict]:
+    def step(self, action: int) -> Tuple[Tuple, float, bool, dict]:
         """
         Execute one step in the environment
 
@@ -175,7 +174,7 @@ class SnakeEnv(RLEnvironment):
         else:
             return config.REWARD_IDLE
 
-    def _get_state(self) -> np.ndarray:
+    def _get_state(self) -> Tuple:
         """
         Get state representation (11 features)
 
@@ -185,7 +184,7 @@ class SnakeEnv(RLEnvironment):
         - Food location: left, right, up, down (4)
 
         Returns:
-            State array (shape: 11,)
+            State tuple of 11 floats
         """
         head = self.snake[0]
 
@@ -248,7 +247,8 @@ class SnakeEnv(RLEnvironment):
             food_down
         ]
 
-        return np.array(state, dtype=np.float32)
+        # Return tuple of floats (browser-safe, no NumPy)
+        return tuple(float(x) for x in state)
 
     def get_state_size(self) -> int:
         """Get state size"""
