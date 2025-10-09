@@ -70,6 +70,11 @@ class RLTrainer:
         while True:
             # Handle events
             for event in pygame.event.get():
+                # Handle parameter panel events first
+                panel_action = self.visualizer.handle_parameter_event(event)
+                if panel_action == 'save_model':
+                    self.save_model()
+
                 if event.type == pygame.QUIT:
                     self.running = False
                     return self.env.score, total_reward

@@ -7,10 +7,11 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import numpy as np
 from typing import Optional
-from modules.reinforcement_learning.config import config
+from modules.reinforcement_learning.config import config, load_preset
 from modules.reinforcement_learning.environments.snake import SnakeEnv
 from modules.reinforcement_learning.core.q_learning import QLearningAgent
 from modules.reinforcement_learning.utils.stats import TrainingStats
+from modules.reinforcement_learning.ui.controls import RLParameterPanel
 
 class RLVisualizer:
     """Visualizer for RL training"""
@@ -36,6 +37,92 @@ class RLVisualizer:
         # Matplotlib figure for learning curves
         self.fig, self.axes = plt.subplots(2, 1, figsize=(6, 5))
         self.canvas = FigureCanvasAgg(self.fig)
+
+        # Interactive parameter panel
+        self.parameter_panel = RLParameterPanel(
+            x=config.GAME_WIDTH + 10,
+            y=10,
+            width=config.VIZ_WIDTH - 20,
+            on_apply=self.on_parameters_changed
+        )
+
+        # Set initial parameter values
+        self.parameter_panel.set_parameters(
+            learning_rate=config.LEARNING_RATE,
+            discount=config.DISCOUNT_FACTOR,
+            epsilon_start=config.EPSILON_START,
+            epsilon_decay=config.EPSILON_DECAY,
+            speed=config.GAME_SPEED
+        )
+
+    def on_parameters_changed(self, params: dict):
+        """Handle parameter changes from UI"""
+        print("\n" + "=" * 60)
+        print("🔄 Applying new training parameters...")
+        print(f"  Learning Rate: {params['learning_rate']:.4f}")
+        print(f"  Discount: {params['discount']:.3f}")
+        print(f"  Epsilon Start: {params['epsilon_start']:.2f}")
+        print(f"  Epsilon Decay: {params['epsilon_decay']:.4f}")
+        print(f"  Speed: {params['speed']:.0f}")
+
+        # Update config
+        config.LEARNING_RATE = params['learning_rate']
+        config.DISCOUNT_FACTOR = params['discount']
+        config.EPSILON_START = params['epsilon_start']
+        config.EPSILON_DECAY = params['epsilon_decay']
+        config.GAME_SPEED = params['speed']
+
+        # Update agent parameters
+        self.agent.learning_rate = params['learning_rate']
+        self.agent.discount = params['discount']
+        # Note: epsilon_start and decay affect future training, not current epsilon
+        self.agent.epsilon_decay = params['epsilon_decay']
+
+        print("✓ Parameters updated!")
+        print("=" * 60)
+
+    def on_preset_selected(self, preset_name: str):
+        """Handle preset selection"""
+        preset_map = {
+            'preset_default': 'default',
+            'preset_fast': 'fast_learning',
+            'preset_slow': 'slow_careful',
+            'preset_demo': 'visual_demo',
+        }
+
+        if preset_name in preset_map:
+            actual_preset = preset_map[preset_name]
+            load_preset(actual_preset)
+
+            # Update panel to reflect new values
+            self.parameter_panel.set_parameters(
+                learning_rate=config.LEARNING_RATE,
+                discount=config.DISCOUNT_FACTOR,
+                epsilon_start=config.EPSILON_START,
+                epsilon_decay=config.EPSILON_DECAY,
+                speed=config.GAME_SPEED
+            )
+
+            # Apply to agent
+            self.agent.learning_rate = config.LEARNING_RATE
+            self.agent.discount = config.DISCOUNT_FACTOR
+            self.agent.epsilon_decay = config.EPSILON_DECAY
+
+            print(f"\n✓ Loaded preset: {actual_preset}")
+
+    def handle_parameter_event(self, event: pygame.event.Event):
+        """Handle events for parameter panel"""
+        action = self.parameter_panel.handle_event(event)
+        if action:
+            if action.startswith('preset_'):
+                self.on_preset_selected(action)
+            elif action == 'apply':
+                params = self.parameter_panel.get_parameters()
+                self.on_parameters_changed(params)
+            elif action == 'save':
+                # Trigger save from main trainer
+                return 'save_model'
+        return None
 
     def render(self, episode: int = 0, current_state: Optional[np.ndarray] = None):
         """Render everything"""
@@ -116,7 +203,13 @@ class RLVisualizer:
     def _draw_viz_panel(self, episode: int, current_state: Optional[np.ndarray]):
         """Draw visualization panel"""
         panel_x = config.GAME_WIDTH
-        panel_surface = pygame.Surface((config.VIZ_WIDTH, config.WINDOW_HEIGHT))
+
+        # Draw parameter panel first (at top)
+        self.parameter_panel.render(self.screen)
+
+        # Create surface for stats below parameter panel
+        stats_y_start = 540  # After parameter panel (which is ~520px tall)
+        panel_surface = pygame.Surface((config.VIZ_WIDTH, config.WINDOW_HEIGHT - stats_y_start))
         panel_surface.fill(config.COLOR_UI_BG)
 
         y_offset = 10
@@ -197,8 +290,8 @@ class RLVisualizer:
                 panel_surface.blit(text, (10, y_offset))
                 y_offset += 23
 
-        # Blit panel to screen
-        self.screen.blit(panel_surface, (panel_x, 0))
+        # Blit stats panel to screen (below parameter panel)
+        self.screen.blit(panel_surface, (panel_x, stats_y_start))
 
         # Draw learning curves (if enough data)
         if len(self.stats.episode_scores) > 10:
