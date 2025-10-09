@@ -5,10 +5,12 @@ Interactive visualization of classic search algorithms for pathfinding in mazes.
 ## Features
 
 - **5 Search Algorithms**: BFS, DFS, UCS, A*, Greedy Best-First
-- **Real-time Visualization**: Watch algorithms explore the state space
+- **Real-time Visualization**: Watch algorithms explore the state space step-by-step
 - **Performance Metrics**: Compare nodes expanded, path length, and efficiency
-- **Interactive Controls**: Pause, step through, and switch algorithms on the fly
-- **Configurable Parameters**: Easy-to-modify settings for experimentation
+- **Interactive Parameter Panel**: Adjust speed, heuristic weight, and complexity with sliders
+- **Random Start/Goal Mode**: Toggle randomization for varied testing
+- **Live Algorithm Switching**: Change algorithms on-the-fly with number keys
+- **Step-by-step Control**: Pause and step through search for detailed analysis
 
 ## Quick Start
 
@@ -17,20 +19,34 @@ Interactive visualization of classic search algorithms for pathfinding in mazes.
 pip install pygame
 
 # Run the module
-python run_search.py
+python scripts/run_search.py
 
 # Or use a preset
-python run_search.py --preset fast
-python run_search.py --preset simple
+python scripts/run_search.py --preset fast
+python scripts/run_search.py --preset simple
 ```
 
 ## Controls
 
+### Keyboard Shortcuts
 - **1-5**: Select algorithm (1=BFS, 2=DFS, 3=UCS, 4=A*, 5=Greedy)
 - **SPACE**: Pause/Resume search
 - **S**: Step through one iteration (when paused)
 - **R**: Reset and generate new maze
+- **T**: Toggle random start/goal mode
 - **Q**: Quit application
+
+### Interactive UI Panel (Bottom Left)
+- **Speed Slider**: Adjust animation speed (0.1x to 10x)
+- **Heuristic Weight Slider**: Control A* and Greedy heuristic strength (0.5 to 3.0)
+- **Complexity Slider**: Set maze complexity for next reset (0.3 to 1.0)
+- **Apply Button**: Apply slider changes immediately
+
+**Features:**
+- Sliders update in real-time when you click Apply
+- Heuristic weight > 1.0 makes A*/Greedy faster but potentially suboptimal (inadmissible)
+- Changing complexity takes effect on next maze reset (press R)
+- Speed changes apply immediately to current search
 
 ## Algorithms Implemented
 
@@ -132,6 +148,47 @@ astar = AStar(maze, heuristic_func=my_heuristic)
 ```
 
 See `modules/search/heuristics.py` for more heuristic examples and templates!
+
+## Understanding the Visualization
+
+### Layout
+
+**Left Sidebar (300px):**
+- Algorithm name and status
+- Key mappings reference (1-5 for algorithms)
+- Color-coded legend
+- Performance statistics
+- Random mode indicator
+- Interactive parameter panel (sliders)
+
+**Main Area:**
+- Top control panel with instructions
+- Maze visualization
+  - **Green cell**: Start position
+  - **Red cell**: Goal position
+  - **Yellow cells**: Explored states
+  - **Purple cells**: Frontier (to be explored)
+  - **Cyan cells**: Solution path
+  - **Orange cell**: Currently expanding
+  - **Gray cells**: Walls
+
+### Statistics Explained
+
+- **Nodes Expanded**: How many states the algorithm examined
+- **Nodes Generated**: How many states were created (including duplicates)
+- **Max Frontier**: Largest size the frontier reached (space complexity)
+- **Steps**: Total search iterations
+- **Path Length**: Number of moves in solution
+
+**Lower is better** for all metrics except path length (which should be optimal for BFS, UCS, A*).
+
+## Web Version
+
+A browser-compatible version is available at `web/search/`:
+- No installation required for students
+- Runs in any modern browser
+- Same features as desktop (with interactive controls!)
+- Deployed via GitHub Pages for class-wide access
 
 ## File Structure
 
