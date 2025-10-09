@@ -188,12 +188,25 @@ class RLParameterPanel:
 
         # Action buttons
         action_button_y = button_y + (button_height + button_spacing) * 2 + 20
+
+        # Split into two columns for more buttons
+        col_width = (width - 30) // 2
+
         self.action_buttons = {
             'apply': Button(x + 10, action_button_y, width - 20, button_height,
                           "Apply Settings", (0, 150, 0), (0, 200, 0)),
             'save': Button(x + 10, action_button_y + button_height + button_spacing,
-                         width - 20, button_height, "Save Model"),
+                         col_width, button_height, "Save Model"),
+            'load': Button(x + 10 + col_width + button_spacing,
+                         action_button_y + button_height + button_spacing,
+                         col_width, button_height, "Load Model"),
+            'toggle_training': Button(x + 10, action_button_y + (button_height + button_spacing) * 2,
+                                    width - 20, button_height, "Training Mode: ON",
+                                    (139, 233, 253), (189, 253, 255)),
         }
+
+        # Track training mode for button label
+        self.training_mode = True
 
     def set_parameters(self, learning_rate: float, discount: float,
                       epsilon_start: float, epsilon_decay: float, speed: float):
@@ -223,6 +236,8 @@ class RLParameterPanel:
         Handle events. Returns action string if button clicked:
         - 'apply': Apply settings
         - 'save': Save model
+        - 'load': Load model
+        - 'toggle_training': Toggle training mode
         - 'preset_X': Load preset X
         """
         # Handle sliders
@@ -239,16 +254,18 @@ class RLParameterPanel:
             if button.handle_event(event):
                 return action_name
 
-        # Handle apply button
-        for button in self.action_buttons.values():
-            button.handle_event(event)
-
         return None
+
+    def set_training_mode(self, is_training: bool):
+        """Update training mode button text"""
+        self.training_mode = is_training
+        mode_text = "ON" if is_training else "OFF (Inference)"
+        self.action_buttons['toggle_training'].text = f"Training: {mode_text}"
 
     def render(self, surface: pygame.Surface):
         """Render parameter panel"""
-        # Background
-        panel_rect = pygame.Rect(self.x, self.y, self.width, 520)
+        # Background (taller to fit all buttons)
+        panel_rect = pygame.Rect(self.x, self.y, self.width, 600)
         pygame.draw.rect(surface, (40, 42, 54), panel_rect, border_radius=10)
         pygame.draw.rect(surface, (68, 71, 90), panel_rect, 2, border_radius=10)
 

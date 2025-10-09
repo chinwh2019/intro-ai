@@ -120,9 +120,16 @@ class RLVisualizer:
                 params = self.parameter_panel.get_parameters()
                 self.on_parameters_changed(params)
             elif action == 'save':
-                # Trigger save from main trainer
                 return 'save_model'
+            elif action == 'load':
+                return 'load_model'
+            elif action == 'toggle_training':
+                return 'toggle_training'
         return None
+
+    def set_training_mode(self, is_training: bool):
+        """Update UI to reflect training mode"""
+        self.parameter_panel.set_training_mode(is_training)
 
     def render(self, episode: int = 0, current_state: Optional[np.ndarray] = None):
         """Render everything"""
@@ -208,14 +215,14 @@ class RLVisualizer:
         self.parameter_panel.render(self.screen)
 
         # Create surface for stats below parameter panel
-        stats_y_start = 540  # After parameter panel (which is ~520px tall)
+        stats_y_start = 610  # After parameter panel (which is ~600px tall now)
         panel_surface = pygame.Surface((config.VIZ_WIDTH, config.WINDOW_HEIGHT - stats_y_start))
         panel_surface.fill(config.COLOR_UI_BG)
 
         y_offset = 10
 
         # Title
-        title = self.font.render("Q-Learning", True, config.COLOR_TEXT)
+        title = self.font.render("Stats & Q-Values", True, config.COLOR_TEXT)
         panel_surface.blit(title, (10, y_offset))
         y_offset += 40
 

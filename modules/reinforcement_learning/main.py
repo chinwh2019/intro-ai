@@ -37,6 +37,7 @@ class RLTrainer:
         # Training state
         self.running = True
         self.training = True
+        self.inference_mode = False  # When True, agent doesn't learn, epsilon=0
         self.current_episode = 0
 
         # Ensure model directory exists
@@ -58,7 +59,14 @@ class RLTrainer:
         print("\nControls:")
         print("  SPACE: Pause/Resume")
         print("  S: Save model")
+        print("  L: Load model")
+        print("  T: Toggle Training/Inference mode")
         print("  Q: Quit")
+        print("\nUI Buttons:")
+        print("  - Adjust sliders and click Apply")
+        print("  - Click preset buttons (Default, Fast, Slow, Demo)")
+        print("  - Save/Load Model buttons")
+        print("  - Toggle Training mode button")
         print("=" * 70)
 
     def train_episode(self) -> Tuple[int, float]:
@@ -74,6 +82,10 @@ class RLTrainer:
                 panel_action = self.visualizer.handle_parameter_event(event)
                 if panel_action == 'save_model':
                     self.save_model()
+                elif panel_action == 'load_model':
+                    self.load_model()
+                elif panel_action == 'toggle_training':
+                    self.toggle_training_mode()
 
                 if event.type == pygame.QUIT:
                     self.running = False
@@ -85,6 +97,10 @@ class RLTrainer:
                         print("Paused" if not self.training else "Resumed")
                     elif event.key == pygame.K_s:
                         self.save_model()
+                    elif event.key == pygame.K_l:
+                        self.load_model()
+                    elif event.key == pygame.K_t:
+                        self.toggle_training_mode()
                     elif event.key == pygame.K_q:
                         self.running = False
                         return self.env.score, total_reward
@@ -97,14 +113,15 @@ class RLTrainer:
                 )
                 continue
 
-            # Select action
-            action = self.agent.get_action(state, training=True)
+            # Select action (use inference mode if enabled)
+            action = self.agent.get_action(state, training=not self.inference_mode)
 
             # Take step
             next_state, reward, done, info = self.env.step(action)
 
-            # Learn
-            self.agent.learn(state, action, reward, next_state, done)
+            # Learn (only if not in inference mode)
+            if not self.inference_mode:
+                self.agent.learn(state, action, reward, next_state, done)
 
             # Update visualization
             self.visualizer.render(
@@ -137,8 +154,9 @@ class RLTrainer:
             # Train episode
             score, total_reward = self.train_episode()
 
-            # Update epsilon
-            self.agent.update_epsilon()
+            # Update epsilon (only if training)
+            if not self.inference_mode:
+                self.agent.update_epsilon()
 
             # Record stats
             self.visualizer.stats.end_episode(score)
@@ -176,6 +194,36 @@ class RLTrainer:
         self.agent.save(model_path)
         self.visualizer.stats.save(config.STATS_SAVE_PATH)
         print(f"✓ Model saved to {model_path}")
+
+    def load_model(self):
+        """Load saved model"""
+        if self.agent.load(config.MODEL_SAVE_PATH):
+            print("\n✓ Model loaded successfully!")
+            print(f"  Q-table size: {len(self.agent.q_table)}")
+            print(f"  Episodes trained: {self.agent.episodes_trained}")
+            print(f"  Current epsilon: {self.agent.epsilon:.3f}")
+        else:
+            print("\n✗ Failed to load model")
+            print(f"  File: {config.MODEL_SAVE_PATH}")
+            print("  Train and save a model first!")
+
+    def toggle_training_mode(self):
+        """Toggle between training and inference mode"""
+        self.inference_mode = not self.inference_mode
+
+        if self.inference_mode:
+            print("\n🔍 Inference Mode ENABLED")
+            print("  - Agent will NOT learn")
+            print("  - Epsilon = 0 (no exploration)")
+            print("  - Watch trained agent perform!")
+        else:
+            print("\n🎓 Training Mode ENABLED")
+            print("  - Agent will learn from experiences")
+            print(f"  - Epsilon = {self.agent.epsilon:.3f} (exploration active)")
+            print("  - Q-table will update")
+
+        # Update UI
+        self.visualizer.set_training_mode(not self.inference_mode)
 
     def run(self):
         """Run training"""
