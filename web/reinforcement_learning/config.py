@@ -1,5 +1,5 @@
 """
-Configuration for Reinforcement Learning Module
+Configuration for Reinforcement Learning Module - Web Version
 Students can easily modify these parameters!
 """
 
