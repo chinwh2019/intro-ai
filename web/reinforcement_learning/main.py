@@ -159,12 +159,12 @@ class RLTrainer:
 
 async def main():
     """Async main loop for web compatibility"""
+    print("=== RL MODULE STARTING ===")
+    print("Initializing pygame...")
+    pygame.init()
+    print("✓ Pygame initialized")
+
     try:
-        print("=== RL MODULE STARTING ===")
-        print("Initializing pygame...")
-        pygame.init()
-        print("✓ Pygame initialized")
-        
         print("Creating RLTrainer...")
         trainer = RLTrainer(load_model=False)
         print("✓ RLTrainer created")
@@ -251,12 +251,13 @@ async def main():
         print(f"\n✓ Training complete! Best score: {best_score}")
 
     except Exception as e:
-        print(f"❌ ERROR: {e}")
+        print(f"❌ ERROR during training: {e}")
         import traceback
         traceback.print_exc()
-        raise
 
-    pygame.quit()
+    finally:
+        print("Shutting down...")
+        pygame.quit()
 
 
 # Entry point - pygbag calls main() automatically
