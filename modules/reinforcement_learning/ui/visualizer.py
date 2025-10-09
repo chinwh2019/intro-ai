@@ -87,7 +87,7 @@ class RLVisualizer:
             'preset_default': ('default', 'default'),
             'preset_fast': ('fast_learning', 'fast'),
             'preset_slow': ('slow_careful', 'slow'),
-            'preset_demo': ('visual_demo', 'demo'),
+            'preset_turbo': ('turbo', 'turbo'),
         }
 
         if preset_name in preset_map:

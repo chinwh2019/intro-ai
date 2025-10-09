@@ -129,6 +129,10 @@ class RLTrainer:
                 current_state=state
             )
 
+            # Control game speed (steps per second)
+            if config.GAME_SPEED > 0:
+                time.sleep(1.0 / config.GAME_SPEED)
+
             # Update stats
             total_reward += reward
             self.visualizer.stats.record_step(reward)

@@ -28,10 +28,11 @@ def parse_args():
         epilog="""
 Examples:
   python run_rl.py                        # Default settings (1000 episodes)
-  python run_rl.py --preset fast_learning # Fast learning preset
+  python run_rl.py --preset fast_learning # Fast preset (speed 150)
   python run_rl.py --episodes 200          # Train for 200 episodes
   python run_rl.py --load                  # Load saved model
-  python run_rl.py --preset visual_demo    # Slower for watching
+  python run_rl.py --preset slow_careful   # Slow preset (speed 20, watch learning)
+  python run_rl.py --preset turbo          # Turbo preset (speed 200, quick training)
 
 Available presets:
   """ + "\n  ".join(f"- {name}" for name in PRESETS.keys())

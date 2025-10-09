@@ -178,12 +178,12 @@ class RLParameterPanel:
         self.preset_buttons = {
             'default': Button(x + 10, button_y, button_width, button_height, "Default"),
             'fast': Button(x + 10 + button_width + button_spacing, button_y,
-                          button_width, button_height, "Fast Learn"),
+                          button_width, button_height, "Fast"),
             'slow': Button(x + 10, button_y + button_height + button_spacing,
-                          button_width, button_height, "Slow Careful"),
-            'demo': Button(x + 10 + button_width + button_spacing,
+                          button_width, button_height, "Slow"),
+            'turbo': Button(x + 10 + button_width + button_spacing,
                           button_y + button_height + button_spacing,
-                          button_width, button_height, "Visual Demo"),
+                          button_width, button_height, "Turbo"),
         }
 
         # Action buttons

@@ -75,6 +75,7 @@ PRESETS = {
         LEARNING_RATE=0.05,
         EPSILON_DECAY=0.99,
         NUM_EPISODES=500,
+        GAME_SPEED=150,  # Fast simulation
     ),
 
     'slow_careful': RLConfig(
@@ -82,6 +83,7 @@ PRESETS = {
         EPSILON_DECAY=0.999,
         EPSILON_END=0.05,
         NUM_EPISODES=2000,
+        GAME_SPEED=20,  # Slow to watch learning
     ),
 
     'greedy': RLConfig(
@@ -90,10 +92,11 @@ PRESETS = {
         EPSILON_DECAY=0.99,
     ),
 
-    'visual_demo': RLConfig(
-        GAME_SPEED=10,  # Slower for watching
-        SHOW_Q_VALUES=True,
-        SHOW_STATE_INFO=True,
+    'turbo': RLConfig(
+        LEARNING_RATE=0.02,
+        GAME_SPEED=200,  # Maximum speed for quick training
+        EPSILON_DECAY=0.98,
+        UPDATE_PLOT_EVERY=50,  # Update plots less frequently
     ),
 }
 
