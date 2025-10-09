@@ -169,25 +169,27 @@ class RLParameterPanel:
             ),
         }
 
-        # Create preset buttons (more space after sliders)
-        button_y = slider_y + slider_spacing * 5 + 30  # Increased from 20 to 30
+        # Create preset buttons (reduced space after sliders)
+        button_y = slider_y + slider_spacing * 5 + 15  # Reduced from 30 to 15
         button_width = (width - 30) // 2
         button_height = 30
         button_spacing = 10
 
+        # Preset buttons start 25px below the label (room for "Presets:" and "Active:" text)
+        preset_buttons_y = button_y + 25
         self.preset_buttons = {
-            'default': Button(x + 10, button_y, button_width, button_height, "Default"),
-            'fast': Button(x + 10 + button_width + button_spacing, button_y,
+            'default': Button(x + 10, preset_buttons_y, button_width, button_height, "Default"),
+            'fast': Button(x + 10 + button_width + button_spacing, preset_buttons_y,
                           button_width, button_height, "Fast"),
-            'slow': Button(x + 10, button_y + button_height + button_spacing,
+            'slow': Button(x + 10, preset_buttons_y + button_height + button_spacing,
                           button_width, button_height, "Slow"),
             'turbo': Button(x + 10 + button_width + button_spacing,
-                          button_y + button_height + button_spacing,
+                          preset_buttons_y + button_height + button_spacing,
                           button_width, button_height, "Turbo"),
         }
 
-        # Action buttons (more space after preset buttons)
-        action_button_y = button_y + (button_height + button_spacing) * 2 + 25  # Increased from 20 to 25
+        # Action buttons (calculated from preset buttons position)
+        action_button_y = preset_buttons_y + (button_height + button_spacing) * 2 + 15  # Small gap after presets
 
         # Split into two columns for more buttons
         col_width = (width - 30) // 2
@@ -274,8 +276,8 @@ class RLParameterPanel:
 
     def render(self, surface: pygame.Surface):
         """Render parameter panel"""
-        # Background (taller to fit all buttons with better spacing)
-        panel_rect = pygame.Rect(self.x, self.y, self.width, 640)  # Increased from 600 to 640
+        # Background (adjusted height for tighter spacing)
+        panel_rect = pygame.Rect(self.x, self.y, self.width, 600)  # Reduced from 640 back to 600
         pygame.draw.rect(surface, (40, 42, 54), panel_rect, border_radius=10)
         pygame.draw.rect(surface, (68, 71, 90), panel_rect, 2, border_radius=10)
 
@@ -288,14 +290,16 @@ class RLParameterPanel:
             slider.render(surface, self.font)
 
         # Render preset buttons section
-        presets_y = self.y + 30 + 55 * 5 + 10
+        # Buttons are positioned at button_y, label should be just above with minimal gap
+        presets_label_y = self.y + 50 + 60 * 5 + 15  # Match button_y calculation
         presets_label = self.font.render("Presets:", True, (248, 248, 242))
-        surface.blit(presets_label, (self.x + 10, presets_y))
+        surface.blit(presets_label, (self.x + 10, presets_label_y))
 
         # Show active preset indicator
         active_preset_label = self.font.render(f"Active: {self.active_preset.title()}", True, (80, 250, 123))
-        surface.blit(active_preset_label, (self.x + self.width - active_preset_label.get_width() - 10, presets_y))
+        surface.blit(active_preset_label, (self.x + self.width - active_preset_label.get_width() - 10, presets_label_y))
 
+        # Buttons appear 25px below label (just enough room for text)
         for button in self.preset_buttons.values():
             button.render(surface, self.font)
 
