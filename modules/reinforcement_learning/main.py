@@ -39,6 +39,7 @@ class RLTrainer:
         self.training = True
         self.inference_mode = False  # When True, agent doesn't learn, epsilon=0
         self.current_episode = 0
+        self.demo_runs = 0  # Count demo runs during inference mode
 
         # Ensure model directory exists
         os.makedirs(os.path.dirname(config.MODEL_SAVE_PATH), exist_ok=True)
@@ -109,7 +110,8 @@ class RLTrainer:
                 time.sleep(0.1)
                 self.visualizer.render(
                     episode=self.current_episode,
-                    current_state=state
+                    current_state=state,
+                    demo_runs=self.demo_runs
                 )
                 continue
 
@@ -126,7 +128,8 @@ class RLTrainer:
             # Update visualization
             self.visualizer.render(
                 episode=self.current_episode,
-                current_state=state
+                current_state=state,
+                demo_runs=self.demo_runs
             )
 
             # Control game speed (steps per second)
@@ -153,7 +156,12 @@ class RLTrainer:
             if not self.running:
                 break
 
-            self.current_episode = episode
+            # Only increment training episode counter if not in inference mode
+            if not self.inference_mode:
+                self.current_episode = episode
+            else:
+                # In inference mode, use demo counter
+                self.demo_runs += 1
 
             # Train episode
             score, total_reward = self.train_episode()
@@ -162,8 +170,9 @@ class RLTrainer:
             if not self.inference_mode:
                 self.agent.update_epsilon()
 
-            # Record stats
-            self.visualizer.stats.end_episode(score)
+            # Record stats (only if training)
+            if not self.inference_mode:
+                self.visualizer.stats.end_episode(score)
 
             # Save best model
             if score > best_score:
@@ -172,12 +181,17 @@ class RLTrainer:
 
             # Print progress
             if episode % 10 == 0:
-                summary = self.visualizer.stats.get_summary()
-                print(f"Episode {episode}/{config.NUM_EPISODES} | "
-                      f"Score: {score} | "
-                      f"Avg Score: {summary['avg_score']:.1f} | "
-                      f"ε: {self.agent.epsilon:.3f} | "
-                      f"Best: {best_score}")
+                if self.inference_mode:
+                    print(f"Demo Run {self.demo_runs} | "
+                          f"Score: {score} | "
+                          f"Mode: INFERENCE (watching trained agent)")
+                else:
+                    summary = self.visualizer.stats.get_summary()
+                    print(f"Episode {episode}/{config.NUM_EPISODES} | "
+                          f"Score: {score} | "
+                          f"Avg Score: {summary['avg_score']:.1f} | "
+                          f"ε: {self.agent.epsilon:.3f} | "
+                          f"Best: {best_score}")
 
             # Periodic save
             if episode % 100 == 0 and episode > 0:

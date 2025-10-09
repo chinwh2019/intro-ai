@@ -21,6 +21,7 @@ class RLVisualizer:
 
         self.env = env
         self.agent = agent
+        self.is_inference_mode = False  # Track inference mode for display
 
         self.screen = pygame.display.set_mode(
             (config.WINDOW_WIDTH, config.WINDOW_HEIGHT)
@@ -145,9 +146,10 @@ class RLVisualizer:
 
     def set_training_mode(self, is_training: bool):
         """Update UI to reflect training mode"""
+        self.is_inference_mode = not is_training
         self.parameter_panel.set_training_mode(is_training)
 
-    def render(self, episode: int = 0, current_state: Optional[np.ndarray] = None):
+    def render(self, episode: int = 0, current_state: Optional[np.ndarray] = None, demo_runs: int = 0):
         """Render everything"""
         # Clear screen
         self.screen.fill(config.COLOR_BACKGROUND)
@@ -155,8 +157,8 @@ class RLVisualizer:
         # Draw game
         self._draw_game()
 
-        # Draw visualization panel
-        self._draw_viz_panel(episode, current_state)
+        # Draw visualization panel (pass demo_runs for display)
+        self._draw_viz_panel(episode, current_state, demo_runs)
 
         # Update display
         pygame.display.flip()
@@ -223,7 +225,7 @@ class RLVisualizer:
 
         self.screen.blit(game_surface, (0, 0))
 
-    def _draw_viz_panel(self, episode: int, current_state: Optional[np.ndarray]):
+    def _draw_viz_panel(self, episode: int, current_state: Optional[np.ndarray], demo_runs: int = 0):
         """Draw visualization panel"""
         panel_x = config.GAME_WIDTH
 
@@ -242,12 +244,19 @@ class RLVisualizer:
         panel_surface.blit(title, (10, y_offset))
         y_offset += 40
 
-        # Episode info
-        info_lines = [
-            f"Episode: {episode}/{config.NUM_EPISODES}",
-            f"Score: {self.env.score}",
-            f"Steps: {self.env.frame_count}",
-        ]
+        # Episode info (different display for inference vs training)
+        if self.is_inference_mode:
+            info_lines = [
+                f"Mode: INFERENCE (Demo #{demo_runs})",
+                f"Score: {self.env.score}",
+                f"Steps: {self.env.frame_count}",
+            ]
+        else:
+            info_lines = [
+                f"Episode: {episode}/{config.NUM_EPISODES}",
+                f"Score: {self.env.score}",
+                f"Steps: {self.env.frame_count}",
+            ]
 
         for line in info_lines:
             text = self.small_font.render(line, True, config.COLOR_TEXT)
