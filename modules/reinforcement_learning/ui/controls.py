@@ -95,7 +95,7 @@ class Button:
         self.hover_color = hover_color
         self.active_color = (80, 250, 123)
         self.is_hovered = False
-        self.is_active = False
+        self.is_active = False  # For showing selected state (e.g., active preset)
 
     def handle_event(self, event: pygame.event.Event) -> bool:
         """Handle mouse events. Returns True if clicked."""
@@ -208,6 +208,9 @@ class RLParameterPanel:
         # Track training mode for button label
         self.training_mode = True
 
+        # Track active preset
+        self.active_preset = 'default'
+
     def set_parameters(self, learning_rate: float, discount: float,
                       epsilon_start: float, epsilon_decay: float, speed: float):
         """Set slider values"""
@@ -262,6 +265,13 @@ class RLParameterPanel:
         mode_text = "ON" if is_training else "OFF (Inference)"
         self.action_buttons['toggle_training'].text = f"Training: {mode_text}"
 
+    def set_active_preset(self, preset_name: str):
+        """Set which preset is currently active (for visual feedback)"""
+        self.active_preset = preset_name
+        # Update button active states
+        for name, button in self.preset_buttons.items():
+            button.is_active = (name == preset_name)
+
     def render(self, surface: pygame.Surface):
         """Render parameter panel"""
         # Background (taller to fit all buttons)
@@ -281,6 +291,10 @@ class RLParameterPanel:
         presets_y = self.y + 30 + 55 * 5 + 10
         presets_label = self.font.render("Presets:", True, (248, 248, 242))
         surface.blit(presets_label, (self.x + 10, presets_y))
+
+        # Show active preset indicator
+        active_preset_label = self.font.render(f"Active: {self.active_preset.title()}", True, (80, 250, 123))
+        surface.blit(active_preset_label, (self.x + self.width - active_preset_label.get_width() - 10, presets_y))
 
         for button in self.preset_buttons.values():
             button.render(surface, self.font)

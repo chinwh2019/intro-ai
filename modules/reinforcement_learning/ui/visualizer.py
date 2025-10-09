@@ -84,14 +84,17 @@ class RLVisualizer:
     def on_preset_selected(self, preset_name: str):
         """Handle preset selection"""
         preset_map = {
-            'preset_default': 'default',
-            'preset_fast': 'fast_learning',
-            'preset_slow': 'slow_careful',
-            'preset_demo': 'visual_demo',
+            'preset_default': ('default', 'default'),
+            'preset_fast': ('fast_learning', 'fast'),
+            'preset_slow': ('slow_careful', 'slow'),
+            'preset_demo': ('visual_demo', 'demo'),
         }
 
         if preset_name in preset_map:
-            actual_preset = preset_map[preset_name]
+            actual_preset, button_name = preset_map[preset_name]
+
+            print(f"\n{'='*60}")
+            print(f"📦 Loading preset: {actual_preset}")
             load_preset(actual_preset)
 
             # Update panel to reflect new values
@@ -103,12 +106,20 @@ class RLVisualizer:
                 speed=config.GAME_SPEED
             )
 
-            # Apply to agent
+            # Set active preset indicator
+            self.parameter_panel.set_active_preset(button_name)
+
+            # Apply to agent immediately
             self.agent.learning_rate = config.LEARNING_RATE
             self.agent.discount = config.DISCOUNT_FACTOR
             self.agent.epsilon_decay = config.EPSILON_DECAY
 
-            print(f"\n✓ Loaded preset: {actual_preset}")
+            print(f"✓ Preset loaded: {actual_preset}")
+            print(f"  Learning Rate: {config.LEARNING_RATE}")
+            print(f"  Discount: {config.DISCOUNT_FACTOR}")
+            print(f"  Epsilon Decay: {config.EPSILON_DECAY}")
+            print(f"  Speed: {config.GAME_SPEED}")
+            print(f"{'='*60}")
 
     def handle_parameter_event(self, event: pygame.event.Event):
         """Handle events for parameter panel"""
