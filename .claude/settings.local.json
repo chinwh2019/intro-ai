@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git merge:*)",
+      "Bash(gh workflow:*)",
+      "Bash(tree:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: resolve blank page issue in RL web module\n\nRoot cause: Double pygame initialization was causing the browser\nto render a blank page. The main.py called pygame.init() before\ncreating the visualizer, but pygame should only be initialized\nonce in the visualizer''s __init__ method.\n\nChanges:\n- Removed pygame.init() from main.py async main() function\n- Added pygame.init() to RLVisualizer.__init__() to match search module pattern\n- Added explanatory comment about why not to initialize in main()\n\nThis matches the working search module architecture where pygame.init()\nis called in the visualizer constructor, not in the main loop.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

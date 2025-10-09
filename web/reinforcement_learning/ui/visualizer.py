@@ -15,6 +15,9 @@ class RLVisualizer:
     def __init__(self, env: SnakeEnv, agent: QLearningAgent):
         print("RLVisualizer init starting...")
 
+        # Initialize pygame (required for web version)
+        pygame.init()
+
         self.env = env
         self.agent = agent
         self.is_inference_mode = False  # Track inference mode for display

@@ -168,9 +168,8 @@ class RLTrainer:
 async def main():
     """Async main loop for web compatibility"""
     print("=== RL MODULE STARTING ===")
-    print("Initializing pygame...")
-    pygame.init()
-    print("✓ Pygame initialized")
+    # NOTE: pygame.init() is called automatically when RLVisualizer creates the display
+    # Do NOT call pygame.init() here - it causes blank page in browser!
 
     try:
         print("Creating RLTrainer...")
