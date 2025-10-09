@@ -1,0 +1,61 @@
+name: Deploy RL Module to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'modules/reinforcement_learning/**'
+      - 'web/reinforcement_learning/**'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # CRITICAL: Grant write permissions for deployment
+    permissions:
+      contents: write  # Required to push to gh-pages branch
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v3
+
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: 📦 Install Pygbag
+      run: |
+        pip install pygbag
+        echo "✓ Pygbag installed"
+
+    - name: 🔨 Build with Pygbag
+      run: |
+        cd web/reinforcement_learning
+        echo "Building RL module..."
+        pygbag --build main.py
+        echo "✓ Build complete"
+
+    - name: 🔧 Enable Autorun
+      run: |
+        cd web/reinforcement_learning/build/web
+        sed -i 's/autorun : 0/autorun : 1/g' index.html
+        echo "✓ Autorun enabled"
+
+    - name: 🚀 Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./web/reinforcement_learning/build/web
+        destination_dir: reinforcement_learning
+        cname: false
+
+    - name: 📊 Deployment Summary
+      run: |
+        echo "════════════════════════════════════════"
+        echo "✅ RL Module Deployed Successfully!"
+        echo "════════════════════════════════════════"
+        echo ""
+        echo "🌐 URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/reinforcement_learning/"
+        echo ""
+        echo "Wait 1-2 minutes for GitHub Pages to update"
+        echo ""
