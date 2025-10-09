@@ -161,12 +161,16 @@ async def main():
     """Async main loop for web compatibility"""
     try:
         print("=== RL MODULE STARTING ===")
+        print("Initializing pygame...")
+        pygame.init()
+        print("✓ Pygame initialized")
+        
         print("Creating RLTrainer...")
-
         trainer = RLTrainer(load_model=False)
         print("✓ RLTrainer created")
 
         clock = pygame.time.Clock()
+        print("✓ Clock created")
         print("=== READY! Training will start automatically ===")
 
         # Training loop

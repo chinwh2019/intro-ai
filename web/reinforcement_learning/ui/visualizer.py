@@ -13,16 +13,18 @@ class RLVisualizer:
     """Visualizer for RL training"""
 
     def __init__(self, env: SnakeEnv, agent: QLearningAgent):
-        pygame.init()
+        print("RLVisualizer init starting...")
 
         self.env = env
         self.agent = agent
         self.is_inference_mode = False  # Track inference mode for display
 
+        print("Creating display...")
         self.screen = pygame.display.set_mode(
             (config.WINDOW_WIDTH, config.WINDOW_HEIGHT)
         )
         pygame.display.set_caption("Reinforcement Learning - Snake Q-Learning")
+        print("✓ Display created")
 
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 28)
@@ -30,14 +32,17 @@ class RLVisualizer:
 
         # Stats for plotting
         self.stats = TrainingStats()
+        print("✓ Stats created")
 
         # Interactive parameter panel
+        print("Creating parameter panel...")
         self.parameter_panel = RLParameterPanel(
             x=config.GAME_WIDTH + 10,
             y=10,
             width=config.VIZ_WIDTH - 20,
             on_apply=self.on_parameters_changed
         )
+        print("✓ Parameter panel created")
 
         # Set initial parameter values
         self.parameter_panel.set_parameters(
