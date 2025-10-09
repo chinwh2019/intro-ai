@@ -1,10 +1,6 @@
-"""RL Visualization"""
+"""RL Visualization - Web Version (No Matplotlib)"""
 
 import pygame
-import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg
 import numpy as np
 from typing import Optional
 from config import config, load_preset
@@ -34,10 +30,6 @@ class RLVisualizer:
 
         # Stats for plotting
         self.stats = TrainingStats()
-
-        # Matplotlib figure for learning curves
-        self.fig, self.axes = plt.subplots(2, 1, figsize=(6, 5))
-        self.canvas = FigureCanvasAgg(self.fig)
 
         # Interactive parameter panel
         self.parameter_panel = RLParameterPanel(
@@ -331,56 +323,5 @@ class RLVisualizer:
         # Blit stats panel to screen (below parameter panel)
         self.screen.blit(panel_surface, (panel_x, stats_y_start))
 
-        # Draw learning curves (if enough data)
-        if len(self.stats.episode_scores) > 10:
-            self._draw_learning_curves(episode)
-
-    def _draw_learning_curves(self, episode: int):
-        """Draw learning curves using matplotlib"""
-        if episode % config.UPDATE_PLOT_EVERY != 0:
-            return  # Don't update every frame
-
-        # Clear axes
-        for ax in self.axes:
-            ax.clear()
-
-        # Plot scores
-        self.axes[0].plot(self.stats.episode_scores, alpha=0.3, color='blue', label='Score')
-        if self.stats.avg_scores:
-            # Moving average starts at window size (100 episodes)
-            window = 100
-            x_avg = range(window, window + len(self.stats.avg_scores))
-            self.axes[0].plot(x_avg, self.stats.avg_scores, color='red', linewidth=2, label='Avg (100 ep)')
-        self.axes[0].set_title('Score per Episode')
-        self.axes[0].set_xlabel('Episode')
-        self.axes[0].set_ylabel('Score')
-        self.axes[0].legend()
-        self.axes[0].grid(True, alpha=0.3)
-
-        # Plot rewards
-        self.axes[1].plot(self.stats.episode_rewards, alpha=0.3, color='green', label='Reward')
-        if self.stats.avg_rewards:
-            # Moving average starts at window size (100 episodes)
-            window = 100
-            x_avg = range(window, window + len(self.stats.avg_rewards))
-            self.axes[1].plot(x_avg, self.stats.avg_rewards, color='red', linewidth=2, label='Avg (100 ep)')
-        self.axes[1].set_title('Total Reward per Episode')
-        self.axes[1].set_xlabel('Episode')
-        self.axes[1].set_ylabel('Reward')
-        self.axes[1].legend()
-        self.axes[1].grid(True, alpha=0.3)
-
-        self.fig.tight_layout()
-
-        # Convert to pygame surface
-        self.canvas.draw()
-        renderer = self.canvas.get_renderer()
-        raw_data = renderer.tostring_rgb()
-        size = self.canvas.get_width_height()
-
-        plot_surface = pygame.image.fromstring(raw_data, size, "RGB")
-
-        # Blit to screen
-        plot_x = config.GAME_WIDTH
-        plot_y = config.WINDOW_HEIGHT - plot_surface.get_height()
-        self.screen.blit(plot_surface, (plot_x, plot_y))
+        # Note: Learning curves disabled in web version (matplotlib not compatible with Pygbag)
+        # Use desktop version (run_rl.py) for full learning curve visualization
