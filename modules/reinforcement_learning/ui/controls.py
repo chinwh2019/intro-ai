@@ -137,9 +137,9 @@ class RLParameterPanel:
         self.font = pygame.font.Font(None, 18)
         self.title_font = pygame.font.Font(None, 22)
 
-        # Create sliders
-        slider_y = y + 30
-        slider_spacing = 55
+        # Create sliders (increase gap from title)
+        slider_y = y + 50  # Increased from 30 to 50 for more space
+        slider_spacing = 60  # Increased from 55 to 60 for better readability
 
         self.sliders = {
             'learning_rate': Slider(
@@ -169,8 +169,8 @@ class RLParameterPanel:
             ),
         }
 
-        # Create preset buttons
-        button_y = slider_y + slider_spacing * 5 + 20
+        # Create preset buttons (more space after sliders)
+        button_y = slider_y + slider_spacing * 5 + 30  # Increased from 20 to 30
         button_width = (width - 30) // 2
         button_height = 30
         button_spacing = 10
@@ -186,8 +186,8 @@ class RLParameterPanel:
                           button_width, button_height, "Turbo"),
         }
 
-        # Action buttons
-        action_button_y = button_y + (button_height + button_spacing) * 2 + 20
+        # Action buttons (more space after preset buttons)
+        action_button_y = button_y + (button_height + button_spacing) * 2 + 25  # Increased from 20 to 25
 
         # Split into two columns for more buttons
         col_width = (width - 30) // 2
@@ -274,14 +274,14 @@ class RLParameterPanel:
 
     def render(self, surface: pygame.Surface):
         """Render parameter panel"""
-        # Background (taller to fit all buttons)
-        panel_rect = pygame.Rect(self.x, self.y, self.width, 600)
+        # Background (taller to fit all buttons with better spacing)
+        panel_rect = pygame.Rect(self.x, self.y, self.width, 640)  # Increased from 600 to 640
         pygame.draw.rect(surface, (40, 42, 54), panel_rect, border_radius=10)
         pygame.draw.rect(surface, (68, 71, 90), panel_rect, 2, border_radius=10)
 
-        # Title
+        # Title (with more space)
         title = self.title_font.render("Training Settings", True, (248, 248, 242))
-        surface.blit(title, (self.x + 10, self.y + 5))
+        surface.blit(title, (self.x + 10, self.y + 10))  # Increased from y+5 to y+10
 
         # Render sliders
         for slider in self.sliders.values():

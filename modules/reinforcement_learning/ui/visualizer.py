@@ -233,7 +233,7 @@ class RLVisualizer:
         self.parameter_panel.render(self.screen)
 
         # Create surface for stats below parameter panel
-        stats_y_start = 610  # After parameter panel (which is ~600px tall now)
+        stats_y_start = 650  # After parameter panel (which is ~640px tall now)
         panel_surface = pygame.Surface((config.VIZ_WIDTH, config.WINDOW_HEIGHT - stats_y_start))
         panel_surface.fill(config.COLOR_UI_BG)
 
