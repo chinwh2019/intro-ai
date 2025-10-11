@@ -1,101 +1,314 @@
 # Introduction to Artificial Intelligence
 
-This repository contains demo code and implementations of various algorithms for an in-depth understanding of Artificial Intelligence. The project covers key areas of AI, including search algorithms, machine learning, reinforcement learning, and generative AI.
+Interactive visualizations and implementations of fundamental AI algorithms for education and experimentation. All modules available as **desktop applications** and **browser-based demos** (no installation required!).
 
-## Table of Contents
+## 🌟 Features
 
-- [Introduction to Artificial Intelligence](#introduction-to-artificial-intelligence)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-  - [Project Structure](#project-structure)
-  - [Search Algorithms](#search-algorithms)
-    - [Maze Solver](#maze-solver)
-  - [Machine Learning](#machine-learning)
-  - [Reinforcement Learning](#reinforcement-learning)
-  - [Generative AI](#generative-ai)
-  - [Installation](#installation)
-  - [Usage](#usage)
-  - [Contributing](#contributing)
-  - [License](#license)
+- **Interactive Visualizations** - Watch algorithms work step-by-step
+- **Browser & Desktop** - Run locally or access via web
+- **Student-Friendly** - Comprehensive guides and tutorials
+- **Configurable** - Adjust parameters with sliders and presets
+- **Educational Focus** - Built for learning, not just demonstration
 
-## Overview
+## 🚀 Quick Start
 
-This project aims to provide practical implementations and demonstrations of various AI algorithms. It serves as a learning resource for students and enthusiasts interested in understanding the core concepts of Artificial Intelligence through hands-on coding examples.
+### Try in Your Browser (No Installation!)
 
-## Project Structure
+Visit the live demos:
+- **Search Algorithms**: https://chinwh2019.github.io/intro-ai/search/
+- **MDP**: https://chinwh2019.github.io/intro-ai/mdp/
+- **Reinforcement Learning**: https://chinwh2019.github.io/intro-ai/reinforcement_learning/
 
-The repository is organized into the following main sections:
+### Run on Your Computer
 
-- `search/`: Implementation of search algorithms
-- `machine_learning/`: Machine learning algorithms and examples
-- `reinforcement_learning/`: Reinforcement learning implementations
-- `generative_ai/`: Generative AI models and examples
+```bash
+# Clone the repository
+git clone https://github.com/chinwh2019/intro-ai.git
+cd intro-ai
 
-## Search Algorithms
+# Install dependencies
+pip install -r requirements.txt
 
-The search algorithms section includes a maze solver that demonstrates the following algorithms:
+# Run any module
+python scripts/run_search.py
+python scripts/run_mdp.py
+python scripts/run_rl.py
+```
 
-- Depth-First Search (DFS)
-- Breadth-First Search (BFS)
-- Uniform Cost Search (UCS)
-- A* Search
+## 📚 Documentation
 
-### Maze Solver
+- **[GitHub Wiki](https://github.com/chinwh2019/intro-ai/wiki)** - Comprehensive tutorials and theory
+- **Module READMEs** - Quick reference for each module
+- **Student Guides** - Step-by-step learning paths
 
-The maze solver provides a visual representation of how different search algorithms traverse a randomly generated maze. It allows users to compare the performance and behavior of various search strategies.
+## 📂 Project Structure
 
-Key features:
+```
+intro-ai/
+├── modules/              # Desktop implementations
+│   ├── search/          # Search algorithms (BFS, DFS, UCS, A*, Greedy)
+│   ├── mdp/             # Markov Decision Processes
+│   └── reinforcement_learning/  # Q-Learning with Snake
+│
+├── web/                 # Browser-compatible versions (Pygbag/WASM)
+│   ├── search/
+│   ├── mdp/
+│   └── reinforcement_learning/
+│
+├── scripts/             # Runner scripts
+│   ├── run_search.py
+│   ├── run_mdp.py
+│   └── run_rl.py
+│
+├── wiki/                # GitHub Wiki content
+├── legacy/              # Archived old implementations
+└── requirements.txt     # Dependencies
+```
+
+## 🔍 Search Algorithms
+
+Interactive maze solver with 5 search algorithms:
+
+- **Breadth-First Search (BFS)** - Layer-by-layer exploration
+- **Depth-First Search (DFS)** - Deep exploration with backtracking
+- **Uniform Cost Search (UCS)** - Optimal for weighted graphs
+- **A* Search** - Optimal + efficient with heuristics
+- **Greedy Best-First** - Fast heuristic-guided search
+
+**Features:**
+- Real-time step-by-step visualization
+- Interactive parameter controls (speed, heuristic weight, complexity)
+- Performance metrics comparison
 - Random maze generation
-- Real-time visualization of algorithm progress
-- Performance comparison (time taken and nodes expanded)
-- Interactive controls for algorithm selection and maze regeneration
+- Custom start/goal positioning
 
-For more details on the maze solver, refer to the [SEARCH.md](search/SEARCH.md) file.
+**Documentation:** [modules/search/README.md](modules/search/README.md) | [Student Guide](modules/search/STUDENT_GUIDE.md)
 
-## Machine Learning
+## 🎲 Markov Decision Processes (MDPs)
+
+Grid world environment with planning under uncertainty:
+
+- **Value Iteration** - Compute optimal values and policies
+- **Stochastic Transitions** - Model uncertainty (slippery grid)
+- **Interactive Controls** - Adjust discount, noise, rewards
+- **Visual Convergence** - Watch values propagate
+
+**Features:**
+- Real-time value function visualization
+- Policy arrows showing optimal actions
+- Q-value display for all state-action pairs
+- Configurable discount factor and noise levels
+
+**Documentation:** [modules/mdp/README.md](modules/mdp/README.md) | [Student Guide](modules/mdp/STUDENT_GUIDE.md)
+
+## 🐍 Reinforcement Learning
+
+Q-Learning agent learning to play Snake:
+
+- **Q-Learning Algorithm** - Off-policy TD learning
+- **ε-Greedy Exploration** - Balanced exploration/exploitation
+- **Interactive Training** - Adjust hyperparameters in real-time
+- **Training/Inference Modes** - Learn or watch trained agent
+- **Model Persistence** - Save and load trained Q-tables (desktop)
+
+**Features:**
+- Live Q-value display showing agent's learning
+- Training statistics and learning curves
+- Preset configurations for different learning scenarios
+- Parameter sliders (learning rate, epsilon, discount, speed)
+
+**Documentation:** [modules/reinforcement_learning/README.md](modules/reinforcement_learning/README.md) | [Student Guide](modules/reinforcement_learning/STUDENT_GUIDE.md)
+
+## 🤖 Machine Learning
 
 [Coming Soon]
 
-## Reinforcement Learning
-
-Refer to the document in the folder of [reinforcement_learning](reinforcement_learning/RL.md)
-
-## Generative AI
+## ✨ Generative AI
 
 [Coming Soon]
 
-## Installation
+## 💻 Installation
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/your-username/intro-to-ai.git
-   cd intro-to-ai
-   ```
+### Prerequisites
+- Python 3.8 or higher
+- pip (Python package manager)
 
-2. Install the required dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
+### Setup
 
-## Usage
-Example:
-To run the maze solver demo:
+```bash
+# 1. Clone the repository
+git clone https://github.com/chinwh2019/intro-ai.git
+cd intro-ai
 
-1. Navigate to the search directory:
-   ```
-   cd search
-   ```
+# 2. Install dependencies
+pip install -r requirements.txt
+```
 
-2. Go through the `SEARCH.md` for detail instructions.
+**Dependencies:**
+- `pygame` - Graphics and visualization
+- `numpy` - Numerical operations (desktop only)
+- `matplotlib` - Learning curves (desktop only, RL module)
 
-## Contributing
+## 🎮 Usage
 
-Contributions to this project are welcome! Please follow these steps:
+### Desktop Versions (Full Features)
 
+```bash
+# Search Algorithms
+python scripts/run_search.py
+# Press 1-5 to select algorithm, SPACE to pause, R to reset
+
+# MDP
+python scripts/run_mdp.py
+# Press SPACE to start value iteration, P for policy, V for values
+
+# Reinforcement Learning
+python scripts/run_rl.py --preset turbo
+# Press T to toggle training/inference, S to save model
+```
+
+### With Presets
+
+```bash
+# Fast learning
+python scripts/run_rl.py --preset fast_learning
+
+# Simple small maze
+python scripts/run_search.py --preset simple
+
+# Deterministic MDP (no noise)
+python scripts/run_mdp.py --preset deterministic
+```
+
+### Browser Versions (No Installation)
+
+Visit the live demos:
+- Search: https://chinwh2019.github.io/intro-ai/search/
+- MDP: https://chinwh2019.github.io/intro-ai/mdp/
+- RL: https://chinwh2019.github.io/intro-ai/reinforcement_learning/
+
+**Note:** Web versions don't support model save/load or matplotlib visualizations.
+
+## 📖 Learning Resources
+
+### For Students
+
+1. **[GitHub Wiki](https://github.com/chinwh2019/intro-ai/wiki)** - Comprehensive theory and tutorials
+   - Algorithm explanations
+   - Step-by-step guides
+   - Exercises and challenges
+   - Troubleshooting
+
+2. **Module Documentation**
+   - [Search README](modules/search/README.md) + [Student Guide](modules/search/STUDENT_GUIDE.md)
+   - [MDP README](modules/mdp/README.md) + [Student Guide](modules/mdp/STUDENT_GUIDE.md)
+   - [RL README](modules/reinforcement_learning/README.md) + [Student Guide](modules/reinforcement_learning/STUDENT_GUIDE.md)
+
+3. **Interactive Controls**
+   - All modules have parameter sliders
+   - Adjust settings in real-time
+   - Experiment without coding
+
+### For Instructors
+
+- Modular architecture for easy customization
+- Preset configurations for classroom demos
+- Web deployment for zero-setup student access
+- Comprehensive wiki for reducing repetitive questions
+
+## 🎯 Key Features by Module
+
+### Search Algorithms
+- ✅ 5 algorithms (BFS, DFS, UCS, A*, Greedy)
+- ✅ Interactive parameter panel (speed, heuristic, complexity)
+- ✅ Step-by-step execution
+- ✅ Random start/goal mode
+- ✅ Performance metrics
+
+### MDP
+- ✅ Value iteration visualization
+- ✅ Policy display with arrows
+- ✅ Q-value display for all actions
+- ✅ Stochastic transitions (configurable noise)
+- ✅ Real-time convergence tracking
+
+### Reinforcement Learning
+- ✅ Q-Learning with ε-greedy
+- ✅ Live Q-value display
+- ✅ Training/inference modes
+- ✅ Model save/load (desktop)
+- ✅ Interactive hyperparameter tuning
+- ✅ Learning curve visualization (desktop)
+
+## 🛠️ Configuration
+
+All modules support multiple configuration methods:
+
+**Method 1: Interactive sliders** (easiest - while running)
+- Adjust parameters via UI
+- Click Apply button
+- Changes take effect immediately
+
+**Method 2: Presets** (command line)
+```bash
+python scripts/run_rl.py --preset turbo
+python scripts/run_search.py --preset simple
+```
+
+**Method 3: Edit config.py** (programmatic)
+```python
+from modules.search.config import config
+config.MAZE_WIDTH = 50
+config.ANIMATION_SPEED = 2.0
+```
+
+## 🌐 Web Deployment
+
+All modules deployed to GitHub Pages using Pygbag (Python → WebAssembly):
+
+- **Automatic deployment** via GitHub Actions
+- **No server costs** - static file hosting
+- **Instant updates** - push to main, auto-deploys
+- **Cross-platform** - works on any modern browser
+
+**Architecture:**
+- Desktop: Full Python with NumPy, Matplotlib
+- Web: Pure Python (NumPy-free), async/await compatible
+
+## 🤝 Contributing
+
+Contributions welcome! Areas where help is appreciated:
+
+- New algorithms (bidirectional search, IDA*, SARSA, etc.)
+- New environments (different games, puzzles)
+- Additional exercises and tutorials
+- Wiki page improvements
+- Bug fixes and optimizations
+
+**Process:**
 1. Fork the repository
-2. Create a new branch: `git checkout -b feature-branch-name`
-3. Make your changes and commit them: `git commit -m 'Add some feature'`
-4. Push to the branch: `git push origin feature-branch-name`
-5. Submit a pull request
+2. Create feature branch: `git checkout -b feature-name`
+3. Make changes and test
+4. Commit: `git commit -m 'Add feature'`
+5. Push: `git push origin feature-name`
+6. Create Pull Request
 
-## License
+## 🎓 For Educators
+
+This repository is designed for teaching:
+
+- **Modular design** - Use one or all modules
+- **Multiple access modes** - Desktop, web, or both
+- **Preset configurations** - Quick demos without coding
+- **Comprehensive docs** - Wiki, READMEs, student guides
+- **Active learning** - Students experiment, not just watch
+
+**Classroom tested** - Used in university AI courses.
+
+## 🔗 Links
+
+- **Live Demos**: https://chinwh2019.github.io/intro-ai/
+- **Wiki**: https://github.com/chinwh2019/intro-ai/wiki
+- **Issues**: https://github.com/chinwh2019/intro-ai/issues
+
+## 📝 License
